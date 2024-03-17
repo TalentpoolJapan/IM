@@ -12,7 +12,7 @@ totype integer,
 fromtype integer,
 createdunix bigint,
 createdstamp timestamp,
-msgid bigint
+//msgid bigint
 ) ngram_len='1' ngram_chars='cjk'
 ```
 ### Comment
@@ -22,12 +22,26 @@ msgid bigint
 4. user type: 1 normal user | 2 enterprise user 
 5. unixtime for order by
 6. timestamp for readable
-7. msgid for filter repeat msg
+7. ~~msgid for filter repeat msg~~
 
 ### SQL
 ```
 select * from im_message where match('@touser t @fromuser f') and id > {last_read_id};
 ```
+
+### QUESTION
+1. Need store msgid? its NOT a good idea!
+```
+Any message published with the same deduplication ID, within the five-minute deduplication interval, is accepted but not delivered.[AMAZON FIFO]
+```
+
+### SOLUTION
+```
+
+
+
+```
+
 
 ## IM_MESSAGE_LAST_READ
 ```
@@ -48,7 +62,36 @@ DELETE
 ```
 
 ### Question
-1. How to generate an unique ID ?  
+1. How to generate an unique ID ? its NOT a good idea! 
+
+## IM_MESSAGE_LAST_READ MYSQL
+```
+CREATE TABLE im_message_last_read (
+     id BIGINT NOT NULL AUTO_INCREMENT,
+     touser CHAR(32) NOT NULL,
+     fromuser CHAR(32) NOT NULL,
+     lastid bignt NOT NULL DEFAULT 0
+     PRIMARY KEY (id)
+);
+ALTER TABLE im_message_last_read ADD CONSTRAINT unique_index UNIQUE (touser,frouser);
+```
+
+## IM_MESSAGE_LAST_READ MEMORY_MAPPING
+```
+lastreadid := "GET_FROM_CLIENT_FRONT_END_MSG_ID_ACK"
+
+lastreadlist := gmap.New(true)
+//TODO load data from mysql database
+
+lastreadlist.SetIfNotExistFuncLock("TOUSER_UUID",func() interface{} {
+     return gmap.New(true)
+})
+
+lastreadlist.Get("TOUSER_UUID").(*gmap.AnyAnyMap).Set("FROM_UUID",lastreadid)
+
+//insert mysql last_read_id ASYNC
+```
+
 
 ## IM_FRIEND_LIST MYSQL
 ```
@@ -71,9 +114,14 @@ friendlist := gmap.New(true)
 //TODO load data from mysql database
 
 //func SET TOUSER_UUID
-friendlist.SetIfNotExistFuncLock("TOUSER_UUID",func() interface{} {
+needinserttomysql := friendlist.SetIfNotExistFuncLock("TOUSER_UUID",func() interface{} {
      return gmap.New(true)
 })
+
+if needinserttomysql {
+	//insert to mysql ASYNC
+}
+
 //func GET SET BLACKLIST
 isblack := friendlist.Get("TOUSER_UUID").(*gmap.AnyAnyMap).GetOrSetFuncLock("FROM_UUID", func() interface{} {
 		return 2
@@ -81,7 +129,7 @@ isblack := friendlist.Get("TOUSER_UUID").(*gmap.AnyAnyMap).GetOrSetFuncLock("FRO
 
 	switch isblack {
 	case -1:
-		// can;t send to user for in its blacklist
+		// can't send to user for in its blacklist
 		break
 	case 0:
 		//can't send to user for no replied
@@ -91,14 +139,15 @@ isblack := friendlist.Get("TOUSER_UUID").(*gmap.AnyAnyMap).GetOrSetFuncLock("FRO
 			val := isblack - 1
 			if val >= 0 {
 				return val
-			} else {
-				return 0
-			}
+			} 
+			return 0
+			
 		}).(int)
           //insert msg to msg list
           //get insert id
 		  //insert to last read db store
           //notify touser last received msg id
+		  //broadcast fromuser last received msg id
 	}
 
 ```
