@@ -11,8 +11,7 @@ msgtype integer,
 totype integer,
 fromtype integer,
 createdunix bigint,
-createdstamp timestamp,
-//msgid bigint
+msgid string
 ) ngram_len='1' ngram_chars='cjk'
 ```
 ### Comment
@@ -21,8 +20,8 @@ createdstamp timestamp,
 3. msg contents
 4. user type: 1 normal user | 2 enterprise user 
 5. unixtime for order by
-6. timestamp for readable
-7. ~~msgid for filter repeat msg~~
+6. ~~timestamp for readable~~
+7. msgid for filter repeat msgid
 
 ### SQL
 ```
@@ -37,7 +36,7 @@ Any message published with the same deduplication ID, within the five-minute ded
 
 ### SOLUTION
 ```
-
+RoseDB With TTL
 
 
 ```
