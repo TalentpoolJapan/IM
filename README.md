@@ -1,6 +1,33 @@
 # IM
 
-## IM_MESSSAGE 
+## IM_MESSAGE VERSION 1.1
+
+### IMPROVEMENT (TODO)
+```
+//NOSQL check isset friend uniqueID = touser + fromuser
+ok,_ := doubleCheck(uuid,uuid2)
+if ok {
+	isfriend
+} else{
+	//isblack: -1 in blacklist | 0 fromuser can't send msg to touser | 1-2 fromuser can send 1 or 2 msg to touser
+	//fulltextDB double insert
+	insert into im_friend_list (touser,fromuser,isblack,created) values (uuid,uuid2,friendstatus,createdtime)
+	insert into im_friend_list (touser,fromuser,isblack,created) values (uuid2,uuid,friendstatus,createdtime)
+	//add to memory mapping
+}
+
+//fulltextDB GET friends list
+res = select * from im_friend_list where macth('@touser uuid') order by id desc
+//encrypt each uuid2 for prevent brodcast attack
+for range {
+	AESCBC(uuid2)
+}
+
+```
+
+
+
+## IM_MESSSAGE VERSION 1.0 
 ```
 CREATE TABLE im_message (
 id bigint,
@@ -150,3 +177,4 @@ isblack := friendlist.Get("TOUSER_UUID").(*gmap.AnyAnyMap).GetOrSetFuncLock("FRO
 	}
 
 ```
+
