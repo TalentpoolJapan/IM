@@ -139,5 +139,4 @@ func (m *Model) GetSessionId(sessionId GetSessionId) (string, error) {
 	hash := md5.Sum([]byte(idstr))
 	md5Str := hex.EncodeToString(hash[:])
 	return md5Str, nil
-
 }
