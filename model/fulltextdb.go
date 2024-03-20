@@ -23,16 +23,6 @@ func (m *Model) GetDescribe(table string) (*[]Describe, error) {
 	return res.(*[]Describe), nil
 }
 
-// id bigint,
-// touser text,
-// fromuser text,
-// msg text,
-// msgtype integer,
-// totype integer,
-// fromtype integer,
-// createdunix bigint,
-// msgid string
-
 type ImMessage struct {
 	Id        int64
 	SessionId string

@@ -27,7 +27,14 @@ func (n *Model) SetLastReadId(lastId SetLastReadId) error {
 	return n.NoSqlDB.Set(relatedKey, lastReadid)
 }
 
+// 如果没有说明没有发过消息
 func (n *Model) GetLastReadId(lastId GetLastReadId) (string, error) {
 	relatedKey := fmt.Sprintf(`%s<-%s`, lastId.Touser, lastId.Fromuser)
-	return n.NoSqlDB.Get(relatedKey)
+	val, err := n.NoSqlDB.Get(relatedKey)
+	if err != nil {
+		if err.Error() != "key not found in database" {
+			return "", err
+		}
+	}
+	return val, err
 }
