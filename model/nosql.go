@@ -20,6 +20,7 @@ type GetLastReadId struct {
 	Fromuser string
 }
 
+// 我<-你 你发给我的/我看过的/最后一条消息ID
 func (n *Model) SetLastReadId(lastId SetLastReadId) error {
 	relatedKey := fmt.Sprintf(`%s<-%s`, lastId.Touser, lastId.Fromuser)
 	lastReadid := fmt.Sprintf("%d", lastId.Id)

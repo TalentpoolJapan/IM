@@ -22,6 +22,9 @@ func main() {
 			NoSqlDB:    noSqlDB,
 		},
 	}
+	//ct.M.FulltextDB.Exec("alter table im_message drop column sessionid")
+	//ct.M.FulltextDB.Exec("alter table im_message add column sessionid text")
+
 	res, err := ct.GetDescribe("im_message")
 	if err != nil {
 		fmt.Println(err)
