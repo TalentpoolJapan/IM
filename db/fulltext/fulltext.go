@@ -13,6 +13,7 @@ type FulltextDB struct {
 
 func NewFulltextDB(dbHost string) (*FulltextDB, error) {
 	mysql, err := xorm.NewEngine("mysql", fmt.Sprintf("``:``@tcp(%s)/Manticore", dbHost))
+	mysql.ShowSQL(true)
 	return &FulltextDB{
 		db: mysql,
 	}, err
@@ -25,4 +26,8 @@ func (f *FulltextDB) Exec(sql string) (sql.Result, error) {
 func (f *FulltextDB) Query(sql string, rowsSlicePtr interface{}) (interface{}, error) {
 	err := f.db.SQL(sql).Find(rowsSlicePtr)
 	return rowsSlicePtr, err
+}
+
+func (f *FulltextDB) GetSession() *xorm.Session {
+	return f.db.NewSession()
 }
