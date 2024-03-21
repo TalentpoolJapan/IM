@@ -57,6 +57,7 @@ func main() {
 	fmt.Println(msgs)
 
 	ct.M.NoSqlDB.TRUNCATE()
+	ct.M.FulltextDB.TRUNCATE(`im_friend_list`)
 	// err = ct.SetLastReadId(model.SetLastReadId{
 	// 	Touser:   "odfgvbhnjjkkl",
 	// 	Fromuser: "jfghjklgthjkl",

@@ -31,3 +31,7 @@ func (f *FulltextDB) Query(sql string, rowsSlicePtr interface{}) (interface{}, e
 func (f *FulltextDB) GetSession() *xorm.Session {
 	return f.db.NewSession()
 }
+
+func (f *FulltextDB) TRUNCATE(table string) {
+	f.db.Exec(fmt.Sprintf(`TRUNCATE TABLE %s`, table))
+}

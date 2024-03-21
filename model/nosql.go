@@ -93,7 +93,12 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 	///////////////////////////////////////////////////////////////
 	session := n.FulltextDB.GetSession()
 	defer session.Close()
+	//TODO FIX xorm default BEGIN TRANSACTION
 	err = session.Begin()
+	if err != nil {
+		return false, err
+	}
+	_, err = session.Exec("BEGIN")
 	if err != nil {
 		return false, err
 	}
@@ -111,6 +116,8 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 		session.Rollback()
 		return false, err
 	}
+
+	//return true, nil
 	//true
 	// session, err := n.InsertFriends(friend)
 	// if err != nil {
@@ -122,6 +129,7 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 		session.Rollback()
 		return false, err
 	}
+	//session.Rollback()
 	err = session.Commit()
 	if err != nil {
 		batch.Rollback()
