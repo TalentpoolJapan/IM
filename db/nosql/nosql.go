@@ -1,6 +1,7 @@
 package nosql
 
 import (
+	"fmt"
 	"time"
 
 	rdb "github.com/rosedblabs/rosedb/v2"
@@ -50,27 +51,54 @@ func (n *NoSqlDB) SetIfNotExistWithTTL(k, v string, expired time.Duration) (bool
 		batch.Rollback()
 		return false, err
 	}
-	batch.Commit()
 
 	// s, _ := batch.Get([]byte(k))
 	// fmt.Println(string(s))
-	return true, nil
+	return true, batch.Commit()
 }
 
-// func (n *NoSqlDB) TRUNCATE() {
-// 	//queue := make(chan string)
-// 	n.db.AscendKeys(nil, true, func(k []byte) (bool, error) {
-// 		fmt.Println("key = ", string(k))
-// 		// go func() {
-// 		// 	queue <- string(k)
-// 		// }()
-// 		// // n.db.Delete(k)
-// 		// _, err := n.db.Get(k)
-// 		//fmt.Println("x")
-// 		return true, nil
-// 	})
+func (n *NoSqlDB) SetIfNotExist(k, v string) (bool, error) {
+	batch := n.db.NewBatch(rdb.DefaultBatchOptions)
+	val, err := batch.Get([]byte(k))
+	if err != nil {
+		if err.Error() != "key not found in database" {
+			batch.Rollback()
+			return false, err
+		}
 
-// 	//key := <-queue
-// 	//n.db.Delete([]byte(key))
+	}
 
-// }
+	if val != nil {
+		batch.Rollback()
+		return false, nil
+	}
+
+	err = batch.Put([]byte(k), []byte(v))
+	if err != nil {
+		batch.Rollback()
+		return false, err
+	}
+	//batch.Commit()
+
+	// s, _ := batch.Get([]byte(k))
+	// fmt.Println(string(s))
+	return true, batch.Commit()
+}
+
+func (n *NoSqlDB) GetBatch() *rdb.Batch {
+	return n.db.NewBatch(rdb.DefaultBatchOptions)
+}
+
+func (n *NoSqlDB) TRUNCATE() {
+	var keys []string
+	n.db.AscendKeys(nil, true, func(k []byte) (bool, error) {
+		fmt.Println("key = ", string(k))
+		keys = append(keys, string(k))
+		return true, nil
+	})
+
+	for _, v := range keys {
+		n.db.Delete([]byte(v))
+	}
+
+}

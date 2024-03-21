@@ -22,15 +22,41 @@ func main() {
 			NoSqlDB:    noSqlDB,
 		},
 	}
+
 	//ct.M.FulltextDB.Exec("alter table im_message drop column sessionid")
 	//ct.M.FulltextDB.Exec("alter table im_message add column sessionid text")
+	// _, err := ct.M.FulltextDB.Exec(`CREATE TABLE im_friend_list (
+	// 	id bigint,
+	// 	touser text,
+	// 	fromuser text,
+	// 	isblack integer,
+	// 	status integer,
+	// 	created bigint)`)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
-	res, err := ct.GetDescribe("im_message")
+	// res, err := ct.GetDescribe("im_friend_list")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(res)
+
+	_, err := ct.M.CheckOrSetFriends(model.ImFreindList{
+		Touser:   "ddddccbaaaodfgvbhnjjkkl",
+		Fromuser: "ddddccbaaajfghjklgthjkl",
+	})
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(res)
 
+	msgs, err := ct.GetAllFreinds()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(msgs)
+
+	ct.M.NoSqlDB.TRUNCATE()
 	// err = ct.SetLastReadId(model.SetLastReadId{
 	// 	Touser:   "odfgvbhnjjkkl",
 	// 	Fromuser: "jfghjklgthjkl",

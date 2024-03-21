@@ -43,3 +43,18 @@ func (c *Controller) GetLastReadId() {
 func (c *Controller) DeleteLastReadId() {
 
 }
+
+func (c *Controller) CheckOrSetFriends(friend model.ImFreindList) error {
+	ok, err := c.M.CheckOrSetFriends(friend)
+	if err != nil {
+		return err
+	}
+	//已经设置完成了
+	if ok {
+		//存入内存结构
+	}
+	return nil
+}
+func (c *Controller) GetAllFreinds() (*[]model.ImFreindList, error) {
+	return c.M.GetAllFreinds()
+}

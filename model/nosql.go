@@ -1,6 +1,9 @@
 package model
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -37,4 +40,92 @@ func (n *Model) GetLastReadId(lastId GetLastReadId) (string, error) {
 		}
 	}
 	return val, err
+}
+
+// 检查是否有好友记录
+func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
+	hash := md5.Sum([]byte(friend.Touser + friend.Fromuser))
+	friendkey := hex.EncodeToString(hash[:])
+
+	batch := n.NoSqlDB.GetBatch()
+	val, err := batch.Get([]byte(friendkey))
+	if err != nil {
+		if err.Error() != "key not found in database" {
+			batch.Rollback()
+			return false, err
+		}
+	}
+
+	if val != nil {
+		batch.Rollback()
+		return false, nil
+	}
+
+	err = batch.Put([]byte(friendkey), []byte(friend.Fromuser))
+	if err != nil {
+		batch.Rollback()
+		return false, err
+	}
+	/////////////////////////////////////////////////////////////////
+	hash2 := md5.Sum([]byte(friend.Fromuser + friend.Touser))
+	if hash == hash2 {
+		return false, errors.New("can not send msg to own")
+	}
+	friendkey = hex.EncodeToString(hash2[:])
+	val, err = batch.Get([]byte(friendkey))
+	if err != nil {
+		if err.Error() != "key not found in database" {
+			batch.Rollback()
+			return false, err
+		}
+	}
+
+	if val != nil {
+		batch.Rollback()
+		return false, nil
+	}
+
+	err = batch.Put([]byte(friendkey), []byte(friend.Touser))
+	if err != nil {
+		batch.Rollback()
+		return false, err
+	}
+	///////////////////////////////////////////////////////////////
+	session := n.FulltextDB.GetSession()
+	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		return false, err
+	}
+	sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Touser, friend.Fromuser, 1, 2, time.Now().UnixNano())
+	_, err = n.FulltextDB.Exec(sql)
+	if err != nil {
+		batch.Rollback()
+		session.Rollback()
+		return false, err
+	}
+	sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Fromuser, friend.Touser, 1, 2, time.Now().UnixNano())
+	_, err = n.FulltextDB.Exec(sql)
+	if err != nil {
+		batch.Rollback()
+		session.Rollback()
+		return false, err
+	}
+	//true
+	// session, err := n.InsertFriends(friend)
+	// if err != nil {
+	// 	batch.Rollback()
+	// }
+	//一致性提交
+	err = batch.Commit()
+	if err != nil {
+		session.Rollback()
+		return false, err
+	}
+	err = session.Commit()
+	if err != nil {
+		batch.Rollback()
+		return false, err
+	}
+	return true, nil
 }
