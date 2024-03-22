@@ -22,11 +22,16 @@ require (
 	github.com/rosedblabs/wal v1.3.6-0.20230924022528-3202245af020 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
+	go.opentelemetry.io/otel v1.14.0 // indirect
+	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	xorm.io/builder v0.3.11-0.20220531020008-1bd24a7dc978 // indirect
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/gogf/gf/v2 v2.6.4
+	github.com/gorilla/websocket v1.5.1
 	xorm.io/xorm v1.3.9
 )

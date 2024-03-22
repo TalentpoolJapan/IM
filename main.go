@@ -8,11 +8,13 @@ import (
 	"imserver/model"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gogf/gf/v2/container/gmap"
 )
 
 var (
 	fulltextDb, _ = fulltext.NewFulltextDB("127.0.0.1:9306")
 	noSqlDB, _    = nosql.NewNoSqlDB("IMKVDB")
+	memDB         = gmap.New(true)
 )
 
 func main() {
@@ -20,9 +22,10 @@ func main() {
 		M: &model.Model{
 			FulltextDB: fulltextDb,
 			NoSqlDB:    noSqlDB,
+			MemDB:      memDB,
 		},
 	}
-
+	ct.M.FulltextDB.Exec("alter table im_friend_list add column count integer")
 	//ct.M.FulltextDB.Exec("alter table im_message drop column sessionid")
 	//ct.M.FulltextDB.Exec("alter table im_message add column sessionid text")
 	// _, err := ct.M.FulltextDB.Exec(`CREATE TABLE im_friend_list (
@@ -36,28 +39,28 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 
-	// res, err := ct.GetDescribe("im_friend_list")
+	res, err := ct.GetDescribe("im_friend_list")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(res)
+
+	// _, err := ct.M.CheckOrSetFriends(model.ImFreindList{
+	// 	Touser:   "ddddccbaaaodfgvbhnjjkkl",
+	// 	Fromuser: "ddddccbaaajfghjklgthjkl",
+	// })
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }
-	// fmt.Println(res)
 
-	_, err := ct.M.CheckOrSetFriends(model.ImFreindList{
-		Touser:   "ddddccbaaaodfgvbhnjjkkl",
-		Fromuser: "ddddccbaaajfghjklgthjkl",
-	})
-	if err != nil {
-		fmt.Println(err)
-	}
+	// msgs, err := ct.GetAllFreinds()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(msgs)
 
-	msgs, err := ct.GetAllFreinds()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(msgs)
-
-	ct.M.NoSqlDB.TRUNCATE()
-	ct.M.FulltextDB.TRUNCATE(`im_friend_list`)
+	// ct.M.NoSqlDB.TRUNCATE()
+	// ct.M.FulltextDB.TRUNCATE(`im_friend_list`)
 	// err = ct.SetLastReadId(model.SetLastReadId{
 	// 	Touser:   "odfgvbhnjjkkl",
 	// 	Fromuser: "jfghjklgthjkl",

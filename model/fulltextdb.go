@@ -148,34 +148,11 @@ type ImFreindList struct {
 	Touser   string
 	Fromuser string
 	Isblack  int
+	Count    int
 	Status   int
 	Created  int64
 }
 
-// // 好友是双向的 抛出session保持事务的一致性
-//
-//	func (m *Model) InsertFriends(friend ImFreindList) (session *xorm.Session, err error) {
-//		session = m.FulltextDB.GetSession()
-//		defer session.Close()
-//		err = session.Begin()
-//		if err != nil {
-//			return session, err
-//		}
-//		sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Touser, friend.Fromuser, 1, 2, time.Now().UnixNano())
-//		_, err = m.FulltextDB.Exec(sql)
-//		if err != nil {
-//			session.Rollback()
-//			return session, err
-//		}
-//		sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Fromuser, friend.Touser, 1, 2, time.Now().UnixNano())
-//		_, err = m.FulltextDB.Exec(sql)
-//		if err != nil {
-//			session.Rollback()
-//			return session, err
-//		}
-//		//err = session.Commit()
-//		return session, nil
-//	}
 func (m *Model) GetAllFreinds() (*[]ImFreindList, error) {
 	var data []ImFreindList
 	res, err := m.FulltextDB.Query("select * from im_friend_list", &data)

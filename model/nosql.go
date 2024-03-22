@@ -102,14 +102,14 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Touser, friend.Fromuser, 1, 2, time.Now().UnixNano())
+	sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created) values ('%s','%s',%d,%d,%d,%d)`, friend.Touser, friend.Fromuser, 0, 2, 1, time.Now().UnixNano())
 	_, err = session.Exec(sql)
 	if err != nil {
 		batch.Rollback()
 		session.Rollback()
 		return false, err
 	}
-	sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Fromuser, friend.Touser, 1, 2, time.Now().UnixNano())
+	sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created) values ('%s','%s',%d,%d,%d,%d)`, friend.Fromuser, friend.Touser, 0, 2, 1, time.Now().UnixNano())
 	_, err = session.Exec(sql)
 	if err != nil {
 		batch.Rollback()
@@ -117,12 +117,6 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 		return false, err
 	}
 
-	//return true, nil
-	//true
-	// session, err := n.InsertFriends(friend)
-	// if err != nil {
-	// 	batch.Rollback()
-	// }
 	//一致性提交
 	err = batch.Commit()
 	if err != nil {
