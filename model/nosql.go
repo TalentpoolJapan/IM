@@ -103,14 +103,14 @@ func (n *Model) CheckOrSetFriends(friend ImFreindList) (bool, error) {
 		return false, err
 	}
 	sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Touser, friend.Fromuser, 1, 2, time.Now().UnixNano())
-	_, err = n.FulltextDB.Exec(sql)
+	_, err = session.Exec(sql)
 	if err != nil {
 		batch.Rollback()
 		session.Rollback()
 		return false, err
 	}
 	sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,status,created) values ('%s','%s',%d,%d,%d)`, friend.Fromuser, friend.Touser, 1, 2, time.Now().UnixNano())
-	_, err = n.FulltextDB.Exec(sql)
+	_, err = session.Exec(sql)
 	if err != nil {
 		batch.Rollback()
 		session.Rollback()
