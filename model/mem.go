@@ -13,7 +13,7 @@ type MemInitUser struct {
 	Touser string
 }
 
-func (m *Model) MemAddNewUser(user MemInitUser) {
+func (m *Model) MemAddNewUser(user MemInitUser) (err error) {
 	exist := m.MemDB.SetIfNotExistFuncLock(user.Touser, func() interface{} {
 		var (
 			node1 = gmap.New(true)
@@ -33,8 +33,12 @@ func (m *Model) MemAddNewUser(user MemInitUser) {
 		return node1
 	})
 	if !exist {
-		m.MemInitTouserFromDB(user.Touser)
+		err = m.MemInitTouserFromDB(user.Touser)
+		if err != nil {
+			return
+		}
 	}
+	return
 }
 
 func (m *Model) MemSetAllUserBasicInfo() {
