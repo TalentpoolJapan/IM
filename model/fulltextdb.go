@@ -149,8 +149,9 @@ type ImFreindList struct {
 	Fromuser string
 	Isblack  int
 	Count    int
-	Status   int
-	Created  int64
+	// Status 预留添加好友字段
+	Status  int
+	Created int64
 }
 
 func (m *Model) GetAllFreinds() (*[]ImFreindList, error) {
