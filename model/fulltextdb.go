@@ -161,3 +161,19 @@ func (m *Model) GetAllFreinds() (*[]ImFreindList, error) {
 	}
 	return res.(*[]ImFreindList), nil
 }
+
+// TODO
+func (m *Model) SearchP2PChatMsg(touser, fromuser string) {
+
+}
+func (m *Model) SearchChatMsg(touser string) {
+
+}
+
+func (m *Model) SetBlacklistByTouser(touser, fromuser string, isBlack int) {
+	//TODO update isblack
+}
+
+func (m *Model) SetRecvCountByTouser(touser, fromuser string, isBlack int) {
+	//TODO update count
+}
