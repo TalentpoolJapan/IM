@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -22,6 +23,20 @@ func (m *Model) GetDescribe(table string) (*[]Describe, error) {
 	}
 	return res.(*[]Describe), nil
 }
+
+//需要转译的字符串：!    "    $    '    (    )    -    /    <    @    \    ^    |    ~ 转译为空字符串
+
+// CREATE TABLE im_message (
+// 	id bigint,
+//  sessionid text
+// 	touser text,
+// 	fromuser text,
+// 	msg text,
+// 	msgtype integer,
+// 	totype integer,
+// 	fromtype integer,
+// 	created bigint
+// 	) prefix_fields='msg' min_prefix_len='2'  ngram_len='1' ngram_chars='cjk'
 
 type ImMessage struct {
 	Id        int64
@@ -164,17 +179,68 @@ func (m *Model) GetAllFreinds() (*[]ImFreindList, error) {
 }
 
 // TODO
-func (m *Model) SearchP2PChatMsg(touser, fromuser string) {
+func (m *Model) SearchP2PChatMsg(touser, fromuser, msg string) (*[]ImMessage, error) {
+	var (
+		data []ImMessage
+	)
+	sessionId, err := m.GetSessionId(GetSessionId{
+		Touser:   touser,
+		Fromuser: fromuser,
+	})
+	if err != nil {
+		return &data, err
+	}
+	sql := fmt.Sprintf(`select * from im_message where match('@msg *%s* @sessionid %s') group by id within group order by id desc`,
+		msg, sessionId)
+	res, err := m.FulltextDB.Query(sql, &data)
+	if err != nil {
+		return res.(*[]ImMessage), err
+	}
+
+	return res.(*[]ImMessage), nil
 
 }
-func (m *Model) SearchChatMsg(touser string) {
-
+func (m *Model) SearchChatMsg(touser, msg string) (*[]ImMessage, error) {
+	var (
+		data   []ImMessage
+		data_f []ImMessage
+		data_s []ImMessage
+	)
+	sql := fmt.Sprintf(`select * from im_message where match('@msg *%s* @touser %s') group by id within group order by id desc`,
+		msg, touser)
+	res_f, err := m.FulltextDB.Query(sql, &data_f)
+	if err != nil {
+		return res_f.(*[]ImMessage), err
+	}
+	sql = fmt.Sprintf(`select * from im_message where match('@msg *%s* @fromuser %s') group by id within group order by id desc`,
+		msg, touser)
+	res_s, err := m.FulltextDB.Query(sql, &data_s)
+	if err != nil {
+		return res_s.(*[]ImMessage), err
+	}
+	//搜索第一遍我<-你
+	for _, v := range *res_f.(*[]ImMessage) {
+		data = append(data, v)
+	}
+	//搜索第二遍我->你
+	for _, v := range *res_s.(*[]ImMessage) {
+		data = append(data, v)
+	}
+	//根据ID从大到小排序
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i].Id > data[j].Id
+	})
+	return &data, nil
 }
 
-func (m *Model) SetBlacklistByTouser(touser, fromuser string, isBlack int) {
-	//TODO update isblack
+func (m *Model) SetBlacklistByTouser(touser, fromuser string, isBlack int) (err error) {
+	sql := fmt.Sprintf(`update im_friend_list set isblack=%d where match('@touser %s fromuser %s')`, isBlack, touser, fromuser)
+	_, err = m.FulltextDB.Exec(sql)
+	return
 }
 
-func (m *Model) SetRecvCountByTouser(touser, fromuser string, isBlack int) {
-	//TODO update count
+func (m *Model) SetRecvCountByTouser(touser, fromuser string, count int) (err error) {
+	sql := fmt.Sprintf(`update im_friend_list set count=%d where match('@touser %s fromuser %s')`, count, touser, fromuser)
+	_, err = m.FulltextDB.Exec(sql)
+	return
 }
