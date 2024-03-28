@@ -79,7 +79,7 @@ func (m *Model) MemInitTouserFromDB(touser string) (err error) {
 		if v.Isblack == 1 {
 			m.MemSetBlacklistByTouser(v.Touser, v.Fromuser)
 		}
-		m.MemSetRecvCountByTouser(v.Touser, v.Fromuser, v.Count)
+		m.MemSetRecvCountDirectByTouser(v.Touser, v.Fromuser, v.Count)
 	}
 	return
 }
@@ -107,8 +107,37 @@ func (m *Model) MemIsInBlacklist(touser, fromuser string) bool {
 	return m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Contains(fromuser)
 }
 
-func (m *Model) MemSetRecvCountByTouser(touser, fromuser string, count int) {
+func (m *Model) MemSetRecvCountDirectByTouser(touser, fromuser string, count int) {
 	m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("RecvCount").(*gmap.AnyAnyMap).Set(fromuser, count)
+}
+
+// 设置获取单个对话消息数量阈值
+func (m *Model) MemSetGetRecvCountThresholdByTouser(touser, fromuser string) (iSet bool, err error) {
+	var (
+		count    int  = 0
+		isUpdate bool = false
+	)
+	recvCount := m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("RecvCount").(*gmap.AnyAnyMap)
+	recvCount.RLockFunc(func(s map[interface{}]interface{}) {
+		for k, v := range s {
+			if fromuser == k.(string) {
+				count = v.(int) - 1
+				if count > 0 {
+					recvCount.Set(fromuser, count)
+					err = m.SetRecvCountByTouser(touser, fromuser, count)
+					if err != nil {
+						//rollback
+						recvCount.Set(fromuser, count+1)
+					}
+					isUpdate = true
+				}
+			}
+		}
+	})
+	if isUpdate {
+		return true, nil
+	}
+	return false, err
 }
 
 func (m *Model) MemSetConnByTouser(touser, sessionId string, conn *websocket.Conn) {
