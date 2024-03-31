@@ -11,9 +11,21 @@ import (
 
 type MemInitUser struct {
 	Touser string
+	//姓名/公司名
+	Fullname string
+	//头像/Logo
+	Avatar string
+	//用户类型
+	Usertype int
+	//sessionId
+	SessionId string
+	//Conn
+	Conn *websocket.Conn
+	//Send
+	Send chan []byte
 }
 
-func (m *Model) MemAddNewUser(user MemInitUser) (err error) {
+func (m *Model) MemAddNewUser(user *MemInitUser) (err error) {
 	exist := m.MemDB.SetIfNotExistFuncLock(user.Touser, func() interface{} {
 		var (
 			node1 = gmap.New(true)
@@ -22,14 +34,16 @@ func (m *Model) MemAddNewUser(user MemInitUser) (err error) {
 			node4 = gmap.New(true)
 			node5 = gmap.New(true)
 		)
-		//存放所有的conn连接指针
+		//存放所有的conn连接指针 node2:sessionId,conn
 		node1.Set("Conn", node2)
 		// //存放所有的黑名单
 		node1.Set("Blacklist", node3)
-		//存放还能接收消息的数量
+		//存放我还能接收你发送的消息的数量
 		node1.Set("RecvCount", node4)
 		//存放所有联系人的uuid
 		node1.Set("Contact", node5)
+		//存放当前用户的profile
+		node1.Set("Profile", user)
 		return node1
 	})
 	if !exist {
@@ -37,28 +51,22 @@ func (m *Model) MemAddNewUser(user MemInitUser) (err error) {
 		if err != nil {
 			return
 		}
+		m.MemSetUserProfile(user)
+		m.MemSetConnByTouser(user)
 	}
 	return
 }
 
 func (m *Model) MemSetAllUserBasicInfo() {
-	//TODO GET ALL users from DB
-	m.MemDB.SetIfNotExistFuncLock("UserList", func() interface{} {
-		var (
-			node1 = gmap.New(true)
-			node2 = gmap.New(true)
-		)
-		node1.Set("Conn", node2)
-		return node1
-	})
+
 }
 
-func (m *Model) MemGetUserProfile(touser string) string {
-	return m.MemDB.Get(touser).(string)
+func (m *Model) MemGetUserProfile(touser string) MemInitUser {
+	return m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("Profile").(MemInitUser)
 }
 
-func (m *Model) MemSetUserProfile(touserjson string) {
-	m.MemDB.Set("User", touserjson)
+func (m *Model) MemSetUserProfile(user *MemInitUser) {
+	m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Set("Profile", user)
 }
 
 func (m *Model) MemGetAllContactsProfiles(touser string) {
@@ -140,8 +148,8 @@ func (m *Model) MemSetGetRecvCountThresholdByTouser(touser, fromuser string) (iS
 	return false, err
 }
 
-func (m *Model) MemSetConnByTouser(touser, sessionId string, conn *websocket.Conn) {
-	m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("Conn").(*gmap.AnyAnyMap).Set(sessionId, conn)
+func (m *Model) MemSetConnByTouser(user *MemInitUser) {
+	m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Get("Conn").(*gmap.AnyAnyMap).Set(user.SessionId, user.Conn)
 }
 
 func (m *Model) MemRemoveConnByTouser(touser, sessionId string) {
