@@ -52,6 +52,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gogf/gf/v2 v2.6.4
 	github.com/gorilla/websocket v1.5.1
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	golang.org/x/sync v0.6.0
 	xorm.io/xorm v1.3.9
 )

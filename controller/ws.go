@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 const (
@@ -41,6 +42,7 @@ var upgrader = websocket.Upgrader{
 
 func (c *Controller) WsUnregister(s *model.MemInitUser) {
 	c.M.WsUnregister(s)
+	close(s.Send)
 }
 
 func (c *Controller) WsReadMsg(s *model.MemInitUser) {
@@ -87,7 +89,6 @@ func (c *Controller) WsWriteMsg(s *model.MemInitUser) {
 			if err != nil {
 				return
 			}
-			//TODO解析发送
 			w.Write(message)
 
 			// Add queued chat messages to the current websocket message.
@@ -126,13 +127,13 @@ func (c *Controller) WsHandler(g *gin.Context) {
 		conn.Close()
 		return
 	}
-
+	sessionId, _ := gonanoid.New(128)
 	s := &model.MemInitUser{
 		Touser:    "uuid",
 		Fullname:  "fullname",
 		Avatar:    "avatar",
 		Usertype:  0,
-		SessionId: "TODO BUILD SESSIONID",
+		SessionId: sessionId,
 		Conn:      conn,
 		Send:      make(chan []byte, 256),
 	}
