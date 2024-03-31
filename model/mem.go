@@ -51,9 +51,9 @@ func (m *Model) MemAddNewUser(user *MemInitUser) (err error) {
 		if err != nil {
 			return
 		}
-		m.MemSetUserProfile(user)
-		m.MemSetConnByTouser(user)
 	}
+	m.MemSetUserProfile(user)
+	m.MemSetConnByTouser(user)
 	return
 }
 
