@@ -39,16 +39,25 @@ func (m *Model) GetDescribe(table string) (*[]Describe, error) {
 // 	) prefix_fields='msg' min_prefix_len='2'  ngram_len='1' ngram_chars='cjk'
 
 type ImMessage struct {
-	Id        int64
-	SessionId string
-	Touser    string
-	Fromuser  string
-	Msg       string
-	Msgtype   int
-	Totype    int
-	Fromtype  int
-	Created   int64
-	Msgid     string
+	Id               int64  `json:"id,omitempty"`
+	SessionId        string `json:"sessionId,omitempty"`
+	Touser           string `json:"touser,omitempty"`
+	Fromuser         string `json:"fromuser,omitempty"`
+	Msg              string `json:"msg,omitempty"`
+	Msgtype          int    `json:"msgtype,omitempty"`
+	Totype           int    `json:"totype,omitempty"`
+	Fromtype         int    `json:"fromtype,omitempty"`
+	Created          int64  `json:"created,omitempty"`
+	Msgid            string `json:"msgid,omitempty"`
+	ReadId           int64  `json:"readid,omitempty"`
+	Source           int    `json:"source,omitempty"`
+	TouserFullNameEn string `json:"touserfullnameen,omitempty"`
+	TouserFullNameJa string `json:"touserfullnameja,omitempty"`
+	TouserAvatar     string `json:"touseravatar,omitempty"`
+
+	FromUserFullNameEn string `json:"fromuserfullnameen,omitempty"`
+	FromUserFullNameJa string `json:"fromuserfullnameja,omitempty"`
+	FromUserAvatar     string `json:"fromuseravatar,omitempty"`
 }
 
 func (m *Model) InsertMessages(msg ImMessage) (lastId int64, err error) {

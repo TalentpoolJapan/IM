@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	mysqldb "imserver/db/mysql"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gogf/gf/v2/container/gmap"
@@ -19,12 +21,14 @@ var (
 	fulltextDb, _ = fulltext.NewFulltextDB("127.0.0.1:9306")
 	noSqlDB, _    = nosql.NewNoSqlDB("IMKVDB")
 	memDB         = gmap.New(true)
+	mysqlDB, _    = mysqldb.NewMysqlDB()
 
 	ct = &controller.Controller{
 		M: &model.Model{
 			FulltextDB: fulltextDb,
 			NoSqlDB:    noSqlDB,
 			MemDB:      memDB,
+			MysqlDB:    mysqlDB,
 		},
 	}
 
@@ -35,6 +39,7 @@ func WsService() http.Handler {
 	e := gin.New()
 	e.Use(gin.Recovery())
 	e.GET("/ws", ct.WsHandler)
+	e.POST("/token", ct.GetNewToken)
 	return e
 }
 

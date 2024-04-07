@@ -1,20 +1,17 @@
 package model
 
 import (
+	"errors"
 	"fmt"
+
+	mysqldb "imserver/db/mysql"
 
 	"github.com/gogf/gf/v2/container/gmap"
 	"github.com/gorilla/websocket"
 )
 
-//MARK sessionId = encypt key
-
 type MemInitUser struct {
 	Touser string
-	//姓名/公司名
-	Fullname string
-	//头像/Logo
-	Avatar string
 	//用户类型
 	Usertype int
 	//sessionId
@@ -23,10 +20,19 @@ type MemInitUser struct {
 	Conn *websocket.Conn
 	//Send
 	Send chan []byte
+	//Model
+	Model *Model
 }
 
 func (m *Model) MemAddNewUser(user *MemInitUser) (err error) {
-	exist := m.MemDB.SetIfNotExistFuncLock(user.Touser, func() interface{} {
+	isInitUser := m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Get("InitUser")
+	if isInitUser != nil {
+		if isInitUser.(int) == 1 {
+			m.MemSetConnByTouser(user)
+			return
+		}
+	}
+	m.MemDB.SetIfNotExistFuncLock(user.Touser, func() interface{} {
 		var (
 			node1 = gmap.New(true)
 			node2 = gmap.New(true)
@@ -44,36 +50,75 @@ func (m *Model) MemAddNewUser(user *MemInitUser) (err error) {
 		node1.Set("Contact", node5)
 		//存放当前用户的profile
 		node1.Set("Profile", user)
+		//还没有初始化的用户
+		node1.Set("InitUser", 0)
 		return node1
 	})
-	if !exist {
-		err = m.MemInitTouserFromDB(user.Touser)
-		if err != nil {
-			return
-		}
-	}
 	m.MemSetUserProfile(user)
+	err = m.MemInitTouserFromDB(user.Touser)
+	if err != nil {
+		return
+	}
+	m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Set("InitUser", 1)
+
 	m.MemSetConnByTouser(user)
 	return
 }
 
-func (m *Model) MemSetAllUserBasicInfo() {
-
+func (m *Model) InitMemOfflineUser(user *MemInitUser) (err error) {
+	isInitUser := m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Get("InitUser")
+	if isInitUser != nil {
+		if isInitUser.(int) == 1 {
+			return
+		}
+	}
+	m.MemDB.SetIfNotExistFuncLock(user.Touser, func() interface{} {
+		var (
+			node1 = gmap.New(true)
+			node2 = gmap.New(true)
+			node3 = gmap.New(true)
+			node4 = gmap.New(true)
+			node5 = gmap.New(true)
+		)
+		//存放所有的conn连接指针 node2:sessionId,conn
+		node1.Set("Conn", node2)
+		// //存放所有的黑名单
+		node1.Set("Blacklist", node3)
+		//存放我还能接收你发送的消息的数量
+		node1.Set("RecvCount", node4)
+		//存放所有联系人的uuid
+		node1.Set("Contact", node5)
+		//存放当前用户的profile
+		node1.Set("Profile", user)
+		//还没有初始化的用户
+		node1.Set("InitUser", 0)
+		return node1
+	})
+	m.MemSetUserProfile(user)
+	err = m.MemInitTouserFromDB(user.Touser)
+	if err != nil {
+		return
+	}
+	m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Set("InitUser", 1)
+	return
 }
 
-func (m *Model) MemGetUserProfile(touser string) MemInitUser {
-	return m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("Profile").(MemInitUser)
+func (m *Model) MemGetUserProfile(touser string) mysqldb.UserBasicInfo {
+	return m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("Profile").(mysqldb.UserBasicInfo)
 }
 
-func (m *Model) MemSetUserProfile(user *MemInitUser) {
-	m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Set("Profile", user)
-}
-
-func (m *Model) MemGetAllContactsProfiles(touser string) {
-
-}
-func (m *Model) MemGetContactProfileByFromUser(fromuser string) {
-
+func (m *Model) MemSetUserProfile(user *MemInitUser) (err error) {
+	data, err := m.MysqlDB.GetUserProfileByUser(mysqldb.UserProfile{
+		UserType: user.Usertype,
+		Uuid:     []string{user.Touser},
+	})
+	if err != nil {
+		return
+	}
+	if len(data) > 0 {
+		m.MemDB.Get(user.Touser).(*gmap.AnyAnyMap).Set("Profile", data[0])
+	}
+	return errors.New("can not find this user")
 }
 
 func (m *Model) MemInitTouserFromDB(touser string) (err error) {
@@ -123,14 +168,14 @@ func (m *Model) MemSetRecvCountDirectByTouser(touser, fromuser string, count int
 func (m *Model) MemSetGetRecvCountThresholdByTouser(touser, fromuser string) (iSet bool, err error) {
 	var (
 		count    int  = 0
-		isUpdate bool = false
+		isUpdate bool = true
 	)
 	recvCount := m.MemDB.Get(touser).(*gmap.AnyAnyMap).Get("RecvCount").(*gmap.AnyAnyMap)
 	recvCount.RLockFunc(func(s map[interface{}]interface{}) {
 		for k, v := range s {
 			if fromuser == k.(string) {
 				count = v.(int) - 1
-				if count > 0 {
+				if count >= 0 {
 					recvCount.Set(fromuser, count)
 					err = m.SetRecvCountByTouser(touser, fromuser, count)
 					if err != nil {
@@ -145,7 +190,7 @@ func (m *Model) MemSetGetRecvCountThresholdByTouser(touser, fromuser string) (iS
 	if isUpdate {
 		return true, nil
 	}
-	return false, err
+	return !isUpdate, err
 }
 
 func (m *Model) MemSetConnByTouser(user *MemInitUser) {

@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -23,6 +25,10 @@ type GetLastReadId struct {
 	Fromuser string
 }
 
+var (
+	lock sync.RWMutex
+)
+
 // 我<-你 你发给我的/我看过的/最后一条消息ID
 func (n *Model) SetLastReadId(lastId SetLastReadId) error {
 	relatedKey := fmt.Sprintf(`%s<-%s`, lastId.Touser, lastId.Fromuser)
@@ -30,16 +36,32 @@ func (n *Model) SetLastReadId(lastId SetLastReadId) error {
 	return n.NoSqlDB.Set(relatedKey, lastReadid)
 }
 
+func (n *Model) SetNewLastReadId(lastId SetLastReadId) (err error) {
+	lock.Lock()
+	lastReadId, err := n.GetLastReadId(GetLastReadId{Touser: lastId.Touser, Fromuser: lastId.Fromuser})
+	if err != nil {
+		lock.Unlock()
+		return
+	}
+	if lastReadId < int(lastId.Id) {
+		err = n.SetLastReadId(lastId)
+	}
+	lock.Unlock()
+	return
+}
+
 // 如果没有说明没有发过消息
-func (n *Model) GetLastReadId(lastId GetLastReadId) (string, error) {
+func (n *Model) GetLastReadId(lastId GetLastReadId) (int, error) {
 	relatedKey := fmt.Sprintf(`%s<-%s`, lastId.Touser, lastId.Fromuser)
 	val, err := n.NoSqlDB.Get(relatedKey)
 	if err != nil {
-		if err.Error() != "key not found in database" {
-			return "", err
+		if err.Error() == "key not found in database" {
+			return 0, nil
 		}
+		return 0, err
 	}
-	return val, err
+	lastReadId, _ := strconv.Atoi(val)
+	return lastReadId, err
 }
 
 // 检查是否有好友记录
