@@ -102,6 +102,8 @@ func (m *Model) GetMessagesByStartId(msgId MessagesByStartId) (*[]ImMessage, err
 		sql = fmt.Sprintf(`select * from im_message where match('@sessionid %s') and id>%d order by id asc`, sessionId, msgId.Id)
 	} else if msgId.Method == "old" {
 		sql = fmt.Sprintf(`select * from im_message where match('@sessionid %s') and id<%d order by id desc limit 10`, sessionId, msgId.Id)
+	} else if msgId.Method == "recent" {
+		sql = fmt.Sprintf(`select * from im_message where match('@sessionid %s') order by id desc limit 10`, sessionId)
 	} else {
 		return &data, fmt.Errorf("this method->%s is not supported", msgId.Method)
 	}

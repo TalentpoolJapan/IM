@@ -3,6 +3,7 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"imserver/config"
 	"imserver/model"
 	"log"
@@ -104,6 +105,14 @@ type WsErrMsg struct {
 type ErrMsg struct {
 	Msgid  string `json:"msgid,omitempty"`
 	ErrMsg string `json:"errmsg,omitempty"`
+}
+type FriendListMsg struct {
+	Action string `json:"action"`
+	Msg    *[]model.ImFreindList
+}
+type WsMsgs struct {
+	Action string `json:"action"`
+	Msg    *[]model.ImMessage
 }
 
 func (c *Controller) WsReadMsg(s *model.MemInitUser) {
@@ -408,8 +417,149 @@ func (c *Controller) WsReadMsg(s *model.MemInitUser) {
 		}
 
 		//TODO get contact list
-		//TODO move to black list
-		//TODO get recent msgs
+		if _WsMsg.Action == "getfriend" {
+
+			var im_friend_list []model.ImFreindList
+			res, err := c.M.FulltextDB.Query(fmt.Sprintf(`select * from im_friend_list where match('@touser %s');`, fromuser), &im_friend_list)
+			if err != nil {
+				errMsg, _ := json.Marshal(&WsErrMsg{
+					Action: "ErrMsg",
+					Msg: ErrMsg{
+						Msgid:  _WsMsg.Msg.Msgid,
+						ErrMsg: err.Error(),
+					},
+				})
+				select {
+				case s.Send <- errMsg:
+				default:
+					return
+				}
+				continue
+			}
+
+			msg, _ := json.Marshal(&FriendListMsg{
+				Action: "FriendList",
+				Msg:    res.(*[]model.ImFreindList),
+			})
+
+			select {
+			case s.Send <- msg:
+			default:
+				return
+			}
+		}
+
+		if _WsMsg.Action == "moveinblack" {
+			c.M.MemMoveFriendToBlacklistByTouser(_WsMsg.Touser, fromuser)
+			c.M.SetBlacklistByTouser(_WsMsg.Touser, fromuser, 1)
+		}
+
+		if _WsMsg.Action == "moveoutblack" {
+			c.M.MemMoveBlacklistToFriendByTouser(_WsMsg.Touser, fromuser)
+			c.M.SetBlacklistByTouser(_WsMsg.Touser, fromuser, 0)
+		}
+		if _WsMsg.Action == "new_msgs" {
+			res, err := c.M.GetMessagesByStartId(model.MessagesByStartId{
+				Id:       _WsMsg.LastReadId,
+				Touser:   _WsMsg.Touser,
+				Fromuser: fromuser,
+				Method:   "new",
+			})
+			if err != nil {
+				errMsg, _ := json.Marshal(&WsErrMsg{
+					Action: "ErrMsg",
+					Msg: ErrMsg{
+						Msgid:  _WsMsg.Msg.Msgid,
+						ErrMsg: err.Error(),
+					},
+				})
+				select {
+				case s.Send <- errMsg:
+				default:
+					return
+				}
+				continue
+			}
+			msg, _ := json.Marshal(&WsMsgs{
+				Action: "NewMsgs",
+				Msg:    res,
+			})
+
+			select {
+			case s.Send <- msg:
+			default:
+				return
+			}
+
+		}
+
+		if _WsMsg.Action == "old_msgs" {
+			res, err := c.M.GetMessagesByStartId(model.MessagesByStartId{
+				Id:       _WsMsg.LastReadId,
+				Touser:   _WsMsg.Touser,
+				Fromuser: fromuser,
+				Method:   "old",
+			})
+			if err != nil {
+				errMsg, _ := json.Marshal(&WsErrMsg{
+					Action: "ErrMsg",
+					Msg: ErrMsg{
+						Msgid:  _WsMsg.Msg.Msgid,
+						ErrMsg: err.Error(),
+					},
+				})
+				select {
+				case s.Send <- errMsg:
+				default:
+					return
+				}
+				continue
+			}
+			msg, _ := json.Marshal(&WsMsgs{
+				Action: "OldMsgs",
+				Msg:    res,
+			})
+
+			select {
+			case s.Send <- msg:
+			default:
+				return
+			}
+		}
+
+		if _WsMsg.Action == "recent_msgs" {
+			res, err := c.M.GetMessagesByStartId(model.MessagesByStartId{
+				Id:       0,
+				Touser:   _WsMsg.Touser,
+				Fromuser: fromuser,
+				Method:   "recent",
+			})
+			if err != nil {
+				errMsg, _ := json.Marshal(&WsErrMsg{
+					Action: "ErrMsg",
+					Msg: ErrMsg{
+						Msgid:  _WsMsg.Msg.Msgid,
+						ErrMsg: err.Error(),
+					},
+				})
+				select {
+				case s.Send <- errMsg:
+				default:
+					return
+				}
+				continue
+			}
+			msg, _ := json.Marshal(&WsMsgs{
+				Action: "RecentMsgs",
+				Msg:    res,
+			})
+
+			select {
+			case s.Send <- msg:
+			default:
+				return
+			}
+		}
 
 	}
 }
