@@ -1,11 +1,20 @@
-package nosql
+package models
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/gogf/gf/v2/container/gmap"
 	rdb "github.com/rosedblabs/rosedb/v2"
+	"xorm.io/xorm"
 )
+
+type Model struct {
+	MemDB       *gmap.AnyAnyMap
+	ManticoreDB *xorm.Engine
+	MySQLDB     *xorm.Engine
+	NoSqlDB     *NoSqlDB
+}
 
 type NoSqlDB struct {
 	db *rdb.DB
