@@ -56,9 +56,12 @@ func (cl *Controller) WS(c *gin.Context) {
 	var (
 		isChecked = true
 		//isLang    = true
+		auth = c.Query("token")
 	)
 
-	auth := c.Copy().GetHeader("Authorization")
+	if auth == "" {
+		auth = c.Copy().GetHeader("Authorization")
+	}
 
 	user, err := util.CheckAuthHeader(auth)
 	if err != nil {
