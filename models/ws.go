@@ -57,9 +57,9 @@ func (m *Model) InitUser(user *InitUser) (isSuccess bool, err error) {
 		//存放所有联系人的uuid
 		//node1.Set("Contacts", node5)
 		// //存放当前用户的profile
-		// node1.Set("Profile", UserProfile{
-		// 	UUID: user.UUID,
-		// })
+		node1.Set("Profile", UserBasicInfo{
+			Uuid: user.UUID,
+		})
 		return node1
 	})
 
