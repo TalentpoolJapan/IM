@@ -11,6 +11,7 @@ import (
 	"imserver/util"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -93,11 +94,11 @@ func (cl *Controller) WS(c *gin.Context) {
 	// 	return
 	// }
 	//判断该用户的验证token是否已经超时了
-	if util.CheckAuthHeaderIsExpired(user.Expired) {
-		conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10002, "msg": "USER_TOKEN_EXPIRED"})
-		conn.Close()
-		return
-	}
+	//if util.CheckAuthHeaderIsExpired(user.Expired) {
+	//	conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10002, "msg": "USER_TOKEN_EXPIRED"})
+	//	conn.Close()
+	//	return
+	//}
 	//获取唯一链接标识
 	connTag := util.GetAuthToken()
 
@@ -1039,7 +1040,7 @@ func (c *Controller) GetMyContacts(s *models.InitUser, wsMsg WsMsg) {
 	)
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in main", r)
+			fmt.Println("Recovered in main", r, string(debug.Stack()))
 		}
 	}()
 	if wsMsg.ToUser == s.UUID {
@@ -1058,6 +1059,9 @@ func (c *Controller) GetMyContacts(s *models.InitUser, wsMsg WsMsg) {
 		if len(friendList) > 0 {
 			for _, v := range friendList {
 				//我的联系人是fromuser touser是我自己
+				if c.M.MemDB.Get(v.Fromuser) == nil {
+					continue
+				}
 				thisUser := c.M.MemDB.Get(v.Fromuser).(*gmap.AnyAnyMap).Get("Profile")
 				if thisUser != nil {
 					myContacts = append(myContacts, models.MyContacts{
