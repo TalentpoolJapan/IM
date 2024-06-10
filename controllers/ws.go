@@ -493,6 +493,7 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		FromUser:     s.UUID,
 		FromUserType: s.Usertype,
 		ToUser:       wsMsg.ToUser,
+		Msg:          wsMsg.Msg,
 		//ReadId:       uint64(readId),
 	}
 
