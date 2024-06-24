@@ -345,6 +345,10 @@ func (c *Controller) WsReadMsgs(s *models.InitUser) {
 			go c.PutRecvMsgId(s, wsMsg)
 		case "GetP2PMsgsNew":
 			go c.GetP2PMsgs(s, wsMsg)
+		case "GetP2PMsgsOld":
+			go c.GetP2PMsgs(s, wsMsg)
+		case "GetP2PMsgsRecent":
+			go c.GetP2PMsgs(s, wsMsg)
 		case "PutBlack":
 			go c.PutBlack(s, wsMsg)
 		case "DelBlack":
@@ -790,6 +794,8 @@ func (c *Controller) GetP2PMsgs(s *models.InitUser, wsMsg WsMsg) {
 		}
 
 	}
+	b := wsMsg.Action == "GetP2PMsgsRecent"
+	fmt.Println(b)
 	if wsMsg.Action == "GetP2PMsgsRecent" {
 		data, err := c.M.GetMessagesByStartId(s.UUID, wsMsg.ToUser, "recent", 0)
 		if err != nil {
