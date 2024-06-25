@@ -39,7 +39,7 @@ type RecvStatus struct {
 }
 
 // 初始化用户 true 初始化成功 false 初始化失败 golang bool默认值是false
-func (m *Model) InitUser(user *InitUser) (isSuccess bool, err error) {
+func (m *Model) InitUser(user *InitUser, userinfo *UserBasicInfo) (isSuccess bool, err error) {
 	m.MemDB.SetIfNotExistFuncLock(user.UUID, func() interface{} {
 		var (
 			node1 = gmap.New(true)
@@ -58,7 +58,10 @@ func (m *Model) InitUser(user *InitUser) (isSuccess bool, err error) {
 		//node1.Set("Contacts", node5)
 		// //存放当前用户的profile
 		node1.Set("Profile", UserBasicInfo{
-			Uuid: user.UUID,
+			Uuid:       user.UUID,
+			FullNameEn: userinfo.FullNameEn,
+			FullNameJa: userinfo.FullNameJa,
+			Avatar:     userinfo.Avatar,
 		})
 		return node1
 	})

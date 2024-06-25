@@ -141,7 +141,7 @@ func (cl *Controller) WS(c *gin.Context) {
 			}
 		}
 		//初始化内存用户
-		cl.M.InitUser(memUser)
+		cl.M.InitUser(memUser, &userinfo)
 
 		//用户的profile到全局
 		cl.M.MemDB.Get("Profile").(*gmap.AnyAnyMap).Set(user.Uuid, userinfo)
@@ -238,7 +238,7 @@ func (cl *Controller) MockWs(c *gin.Context) {
 	}
 	lock.Unlock()
 	if isInit {
-		cl.M.InitUser(memUser)
+		cl.M.InitUser(memUser, nil)
 		//用户初始化完毕
 		cl.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Set(user.Uuid, 2)
 	}
@@ -408,7 +408,7 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 			UUID: wsMsg.ToUser,
 		}
 
-		c.M.InitUser(memUser)
+		c.M.InitUser(memUser, &userinfo)
 
 		//用户的profile到全局
 		c.M.MemDB.Get("Profile").(*gmap.AnyAnyMap).Set(wsMsg.ToUser, userinfo)
@@ -1074,6 +1074,7 @@ func (c *Controller) GetMyContacts(s *models.InitUser, wsMsg WsMsg) {
 						Uuid:       thisUser.(models.UserBasicInfo).Uuid,
 						FullNameEn: thisUser.(models.UserBasicInfo).FullNameEn,
 						FullNameJa: thisUser.(models.UserBasicInfo).FullNameJa,
+						Avatar:     thisUser.(models.UserBasicInfo).Avatar,
 						IsBlack:    v.Isblack,
 					})
 
@@ -1102,6 +1103,7 @@ func (c *Controller) GetMyContacts(s *models.InitUser, wsMsg WsMsg) {
 						Uuid:       user.Uuid,
 						FullNameEn: user.FullNameEn,
 						FullNameJa: user.FullNameJa,
+						Avatar:     user.Avatar,
 						IsBlack:    v.Isblack,
 					})
 				}
