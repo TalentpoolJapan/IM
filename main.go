@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"imserver/config"
 	"imserver/controllers"
+	httpServer "imserver/internal/adaptor/http"
 	"imserver/models"
 	"net/http"
 
@@ -51,12 +52,16 @@ func Cors() gin.HandlerFunc {
 func main() {
 	//初始化全局内存数据结构
 	initializeData()
-
-	//WS服务开始
 	r := gin.New()
 	r.Use(Cors())
 	r.Use(gin.Recovery())
+
+	// 注册http服务
+	httpServer.RegisterHandler(r)
+
+	//WS服务开始
 	r.GET("/ws", ct.WS)
+
 	//r.GET("/wst", ct.MockWs)
 	r.Run(":8888")
 }
