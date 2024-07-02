@@ -11,7 +11,7 @@ var (
 	ImFriendRepo domainUser.ImFriendRepository
 )
 
-func init() {
+func InitIoc() {
 	ImFriendRepo = persistence.NewManticoreImFriendRepo(ManticoreDB)
 	UserAppServ = appUser.NewUserAppService(ImFriendRepo)
 }
