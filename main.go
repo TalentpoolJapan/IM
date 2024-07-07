@@ -50,7 +50,7 @@ func Cors() gin.HandlerFunc {
 }
 
 func main() {
-	config.InitIoc()
+	config.InitIoc(manticoreDB)
 	//初始化全局内存数据结构
 	initializeData()
 	r := gin.New()

@@ -4,6 +4,7 @@ import (
 	appUser "imserver/internal/application/user"
 	domainUser "imserver/internal/domain/user"
 	"imserver/internal/infrastructure/persistence"
+	"xorm.io/xorm"
 )
 
 var (
@@ -11,7 +12,7 @@ var (
 	ImFriendRepo domainUser.ImFriendRepository
 )
 
-func InitIoc() {
-	ImFriendRepo = persistence.NewManticoreImFriendRepo(ManticoreDB)
+func InitIoc(manticore *xorm.Engine) {
+	ImFriendRepo = persistence.NewManticoreImFriendRepo(manticore)
 	UserAppServ = appUser.NewUserAppService(ImFriendRepo)
 }
