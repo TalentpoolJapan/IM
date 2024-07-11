@@ -3,7 +3,6 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"imserver/config"
-	"imserver/internal/application"
 	"imserver/internal/application/user"
 	"imserver/models"
 	"imserver/util"
@@ -13,7 +12,7 @@ import (
 func GetMyContacts(c *gin.Context) {
 	userToken, err := checkAuth(c)
 	if err != nil {
-		c.JSON(401, application.SingleRespFail[any]("auth failed"))
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
 		return
 	}
 	// 1. get query
