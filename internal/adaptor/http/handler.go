@@ -7,6 +7,7 @@ import (
 	"imserver/internal/application/user"
 	"imserver/models"
 	"imserver/util"
+	"net/http"
 )
 
 func GetMyContacts(c *gin.Context) {
@@ -22,7 +23,7 @@ func GetMyContacts(c *gin.Context) {
 
 	// 2. get my contacts
 	myContacts := config.UserAppServ.GetMyContacts(qry)
-	c.JSON(200, myContacts)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: myContacts.Msg, Data: myContacts.Data}))
 }
 
 func checkAuth(c *gin.Context) (models.UserToken, error) {
