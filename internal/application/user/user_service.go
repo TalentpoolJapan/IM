@@ -75,7 +75,7 @@ func (s *AppService) GetMyContacts(qry *GetMyContactsQry) application.MultiResp[
 			contact.FullNameJa = userBasicInfo.FullNameJa
 			contact.Avatar = userBasicInfo.Avatar
 		}
-		message, existMessage := imMessageMap[friend.FriendUuid]
+		message, existMessage := imMessageMap[friend.SessionId()]
 		if existMessage && message != nil {
 			contact.LatestMessage = message.Msg
 			contact.LatestContactTime = message.Created

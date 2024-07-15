@@ -9,43 +9,43 @@ import (
 // region struct
 type imMessagePO struct {
 	Id        int64  `json:"id,omitempty"`
-	SessionId string `json:"sessionid,omitempty"`
-	ToUser    string `json:"touser,omitempty"`
-	FromUser  string `json:"fromuser,omitempty"`
+	Sessionid string `json:"sessionid,omitempty"`
+	Touser    string `json:"touser,omitempty"`
+	Fromuser  string `json:"fromuser,omitempty"`
 	Msg       string `json:"msg,omitempty"`
-	MsgType   int    `json:"msgtype,omitempty"`
-	ToType    int    `json:"totype,omitempty"`
-	FromType  int    `json:"fromtype,omitempty"`
+	Msgtype   int    `json:"msgtype,omitempty"`
+	Totype    int    `json:"totype,omitempty"`
+	Fromtype  int    `json:"fromtype,omitempty"`
 	Created   int64  `json:"created,omitempty"`
-	MsgId     string `json:"msgid,omitempty"`
+	Msgid     string `json:"msgid,omitempty"`
 }
 
 func convertImMessageEntity(po *imMessagePO) *user.ImMessage {
 	return &user.ImMessage{
 		Id:        po.Id,
-		SessionId: po.SessionId,
-		ToUser:    po.ToUser,
-		FromUser:  po.FromUser,
+		SessionId: po.Sessionid,
+		ToUser:    po.Touser,
+		FromUser:  po.Fromuser,
 		Msg:       po.Msg,
-		MsgType:   po.MsgType,
-		ToType:    po.ToType,
-		FromType:  po.FromType,
+		MsgType:   po.Msgtype,
+		ToType:    po.Totype,
+		FromType:  po.Fromtype,
 		Created:   po.Created,
-		MsgId:     po.MsgId,
+		MsgId:     po.Msgid,
 	}
 }
 func convertImMessagePO(msg *user.ImMessage) *imMessagePO {
 	return &imMessagePO{
 		Id:        msg.Id,
-		SessionId: msg.SessionId,
-		ToUser:    msg.ToUser,
-		FromUser:  msg.FromUser,
+		Sessionid: msg.SessionId,
+		Touser:    msg.ToUser,
+		Fromuser:  msg.FromUser,
 		Msg:       msg.Msg,
-		MsgType:   msg.MsgType,
-		ToType:    msg.ToType,
-		FromType:  msg.FromType,
+		Msgtype:   msg.MsgType,
+		Totype:    msg.ToType,
+		Fromtype:  msg.FromType,
 		Created:   msg.Created,
-		MsgId:     msg.MsgId,
+		Msgid:     msg.MsgId,
 	}
 }
 
@@ -69,7 +69,7 @@ func (r ManticoreMessageRepo) LatestImMessageBySessionId(sessionIds []string) ([
 		var imMessage []*imMessagePO
 		sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') order by id desc limit 1`, sessionId)
 		err := r.ManticoreDB.SQL(sql).Find(&imMessage)
-		if err != nil && len(imMessage) > 0 {
+		if err == nil && len(imMessage) > 0 {
 			result = append(result, convertImMessageEntity(imMessage[0]))
 		}
 	}
