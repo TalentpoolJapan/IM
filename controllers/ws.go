@@ -82,7 +82,7 @@ func (cl *Controller) WS(c *gin.Context) {
 
 	//确认头部解析完成
 	if !isChecked {
-		conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10000, "msg": "AUTH_CHECK_ERROR"})
+		conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10000, "msg": "AUTH_CHECK_ERROR"})
 		conn.Close()
 		return
 	}
@@ -135,7 +135,7 @@ func (cl *Controller) WS(c *gin.Context) {
 		userinfo, err := cl.M.GetUserProfileByUUID(user)
 		if err != nil {
 			cl.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Remove(user.Uuid)
-			err = conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10003, "msg": err.Error()})
+			err = conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10003, "msg": err.Error()})
 			if err != nil {
 				conn.Close()
 			}
@@ -150,7 +150,7 @@ func (cl *Controller) WS(c *gin.Context) {
 		friendList, err := cl.M.GetUserContactsByUUID(user.Uuid)
 		if err != nil {
 			cl.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Remove(user.Uuid)
-			err = conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10004, "msg": "GET_FRIEND_LIST_ERROR"})
+			err = conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10004, "msg": "GET_FRIEND_LIST_ERROR"})
 			if err != nil {
 				conn.Close()
 			}
