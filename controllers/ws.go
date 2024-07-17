@@ -183,7 +183,7 @@ func (cl *Controller) WS(c *gin.Context) {
 		isInitedUser := cl.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Get(user.Uuid)
 		if isInitedUser == nil {
 			//其他线程初始化这个用户发生一个致命错误
-			err = conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10006, "msg": "INIT_USER_ERROR"})
+			err = conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10006, "msg": "INIT_USER_ERROR"})
 			if err != nil {
 				conn.Close()
 			}
@@ -197,7 +197,7 @@ func (cl *Controller) WS(c *gin.Context) {
 
 	//设置连接 如果存在这个conntoken 说明唯一的链接ID出现了一个重复的链接ID，遇到亿万分之一的可能性
 	if false == cl.M.MemDB.Get(user.Uuid).(*gmap.AnyAnyMap).Get("Conn").(*gmap.AnyAnyMap).SetIfNotExist(connTag, memUser.Send) {
-		err = conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10005, "msg": "REPEATED_CONN_TAG"})
+		err = conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10005, "msg": "REPEATED_CONN_TAG"})
 		if err != nil {
 			conn.Close()
 		}
@@ -247,7 +247,7 @@ func (cl *Controller) MockWs(c *gin.Context) {
 		isInitedUser := cl.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Get(user.Uuid)
 		if isInitedUser == nil {
 			//其他线程初始化这个用户发生一个致命错误
-			err = conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10006, "msg": "INIT_USER_ERROR"})
+			err = conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10006, "msg": "INIT_USER_ERROR"})
 			if err != nil {
 				conn.Close()
 			}
@@ -328,7 +328,7 @@ func (c *Controller) WsReadMsgs(s *models.InitUser) {
 		err = json.Unmarshal(message, &wsMsg)
 		if err != nil {
 			if c.Debug {
-				s.Conn.WriteJSON(gin.H{"action": "ErrorMsg", "code": 10007, "msg": "ERROR_MSG_FORMAT"})
+				s.Conn.WriteJSON(gin.H{"action": "SystemMsg", "code": 10007, "msg": "ERROR_MSG_FORMAT"})
 			} else {
 				fmt.Println("错误的消息格式", err)
 				break
