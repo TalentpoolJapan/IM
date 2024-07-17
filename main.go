@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	memDB          = gmap.New(true)
-	mysqlDB, _     = xorm.NewEngine("mysql", fmt.Sprintf("root:%s@%s/%s?charset=utf8", config.MYSQL_SECRECT, config.MYSQL_HOST, config.MYSQL_DB))
-	manticoreDB, _ = xorm.NewEngine("mysql", fmt.Sprintf("``:``@tcp(%s)/Manticore", "127.0.0.1:9306"))
-	//manticoreDB, _ = xorm.NewEngine("mysql", fmt.Sprintf("``:``@tcp(%s)/Manticore", "13.231.174.2:9306"))
-	noSqlDB, _ = models.NewNoSqlDB("IMKVDB")
+	memDB      = gmap.New(true)
+	mysqlDB, _ = xorm.NewEngine("mysql", fmt.Sprintf("root:%s@%s/%s?charset=utf8", config.MYSQL_SECRECT, config.MYSQL_HOST, config.MYSQL_DB))
+	//manticoreDB, _ = xorm.NewEngine("mysql", fmt.Sprintf("``:``@tcp(%s)/Manticore", "127.0.0.1:9306"))
+	manticoreDB, _ = xorm.NewEngine("mysql", fmt.Sprintf("``:``@tcp(%s)/Manticore", "13.231.174.2:9306"))
+	noSqlDB, _     = models.NewNoSqlDB("IMKVDB")
 
 	ct = &controllers.Controller{
 		M: &models.Model{

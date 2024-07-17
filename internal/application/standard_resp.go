@@ -20,6 +20,12 @@ func SingleRespOf[T any](data T, msg string) SingleResp[T] {
 	}
 }
 
+func SingleRespOk[T any]() SingleResp[T] {
+	return SingleResp[T]{
+		Success: true,
+	}
+}
+
 func SingleRespFail[T any](msg string) SingleResp[T] {
 	var emptyData T
 	return SingleResp[T]{

@@ -14,21 +14,23 @@ type imFriendPO struct {
 	Isblack  int
 	Count    int
 	// Status 预留添加好友字段
-	Status   int
-	Created  int64
-	Nexttime int64
+	Status        int
+	Created       int64
+	Nexttime      int64
+	LastReadMsgId string
 }
 
 func convertPOToImFriend(po *imFriendPO) *user.ImFriend {
 	return &user.ImFriend{
-		Id:         po.Id,
-		UserUuid:   po.Touser,
-		FriendUuid: po.Fromuser,
-		IsBlack:    po.Isblack == 1,
-		Count:      po.Count,
-		Status:     po.Status,
-		Created:    po.Created,
-		NextTime:   po.Nexttime,
+		Id:            po.Id,
+		UserUuid:      po.Touser,
+		FriendUuid:    po.Fromuser,
+		IsBlack:       po.Isblack == 1,
+		Count:         po.Count,
+		Status:        po.Status,
+		Created:       po.Created,
+		NextTime:      po.Nexttime,
+		LastReadMsgId: po.LastReadMsgId,
 	}
 }
 func convertImFriendToPO(friend *user.ImFriend) *imFriendPO {
@@ -37,14 +39,15 @@ func convertImFriendToPO(friend *user.ImFriend) *imFriendPO {
 		isBlack = 1
 	}
 	return &imFriendPO{
-		Id:       friend.Id,
-		Touser:   friend.UserUuid,
-		Fromuser: friend.FriendUuid,
-		Isblack:  isBlack,
-		Count:    friend.Count,
-		Status:   friend.Status,
-		Created:  friend.Created,
-		Nexttime: friend.NextTime,
+		Id:            friend.Id,
+		Touser:        friend.UserUuid,
+		Fromuser:      friend.FriendUuid,
+		Isblack:       isBlack,
+		Count:         friend.Count,
+		Status:        friend.Status,
+		Created:       friend.Created,
+		Nexttime:      friend.NextTime,
+		LastReadMsgId: friend.LastReadMsgId,
 	}
 }
 
@@ -60,6 +63,12 @@ func NewManticoreImFriendRepo(engine *xorm.Engine) user.ImFriendRepository {
 
 type ManticoreImFriendRepo struct {
 	ManticoreDB *xorm.Engine
+}
+
+func (r ManticoreImFriendRepo) UpdateLastReadMsgId(uuid string, friendUuid string, lastReadMsgId string) error {
+	sql := fmt.Sprintf(`update im_friend_list set last_read_msg_id = '%s' where match('@fromuser %s @touser %s');`, lastReadMsgId, uuid, friendUuid)
+	_, err := r.ManticoreDB.Exec(sql)
+	return err
 }
 
 func (r ManticoreImFriendRepo) ListImFriendByUuid(uuid string) (friends []*user.ImFriend, err error) {

@@ -16,6 +16,9 @@ type ImFriend struct {
 	Status   int //预留添加好友字段
 	Created  int64
 	NextTime int64
+
+	// 下面字段是后面添加的
+	LastReadMsgId string
 }
 
 func (f ImFriend) SessionId() string {
@@ -37,4 +40,6 @@ func (f ImFriend) SessionId() string {
 
 type ImFriendRepository interface {
 	ListImFriendByUuid(uuid string) ([]*ImFriend, error)
+
+	UpdateLastReadMsgId(uuid string, friendUuid string, lastReadMsgId string) error
 }

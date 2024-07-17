@@ -15,4 +15,6 @@ type ImMessage struct {
 
 type ImMessageRepository interface {
 	LatestImMessageBySessionId(sessionId []string) ([]*ImMessage, error)
+	ListMessageAfterMsgId(sessionId string, id int64) ([]ImMessage, error)
+	GetMessageByClientMsgId(sessionId string, clientMsgId string) (*ImMessage, error)
 }

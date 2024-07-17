@@ -25,6 +25,20 @@ func GetMyContacts(c *gin.Context) {
 	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: myContacts.Msg, Data: myContacts.Data}))
 }
 
+func GetUnreadMessageState(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	qry := user.UnreadMessageStateQry{
+		Uuid: userToken.Uuid,
+	}
+	unreadMessageState := config.UserAppServ.UnreadMessageState(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: unreadMessageState.Msg, Data: unreadMessageState.Data}))
+}
+
 func checkAuth(c *gin.Context) (models.UserToken, error) {
 	auth := c.Query("token")
 

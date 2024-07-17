@@ -63,6 +63,33 @@ type ManticoreMessageRepo struct {
 	ManticoreDB *xorm.Engine
 }
 
+func (r ManticoreMessageRepo) GetMessageByClientMsgId(sessionId string, clientMsgId string) (*user.ImMessage, error) {
+	var data []imMessagePO
+	sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') and msgid='%s'`, sessionId, clientMsgId)
+	err := r.ManticoreDB.SQL(sql).Find(&data)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > 0 {
+		return convertImMessageEntity(&data[0]), nil
+	}
+	return nil, nil
+}
+
+func (r ManticoreMessageRepo) ListMessageAfterMsgId(sessionId string, id int64) ([]user.ImMessage, error) {
+	var data []imMessagePO
+	sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') and id>%s order by id asc`, sessionId, id)
+	err := r.ManticoreDB.SQL(sql).Find(&data)
+	if err != nil {
+		return nil, err
+	}
+	var result []user.ImMessage
+	for _, item := range data {
+		result = append(result, *convertImMessageEntity(&item))
+	}
+	return result, nil
+}
+
 func (r ManticoreMessageRepo) LatestImMessageBySessionId(sessionIds []string) ([]*user.ImMessage, error) {
 	var result []*user.ImMessage
 	for _, sessionId := range sessionIds {
