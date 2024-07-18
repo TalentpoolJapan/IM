@@ -156,7 +156,7 @@ func (m *Model) InsertMessages(s *InitUser, touser, msg, msgid string) (lastId i
 	}
 
 	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s')`,
-		sessionId, touser, s.UUID, msg, 1, toType, s.Usertype, time.Now().Unix(), msgid)
+		sessionId, touser, s.UUID, msg, 1, toType, s.Usertype, time.Now().UnixMicro(), msgid)
 	res, err := m.ManticoreDB.Exec(sql)
 	if err != nil {
 		return 0, err

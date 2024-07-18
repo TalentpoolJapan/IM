@@ -39,7 +39,7 @@ func (f ImFriend) SessionId() string {
 }
 
 type ImFriendRepository interface {
+	GetFriendByUuid(uuid string, friendUuid string) (*ImFriend, error)
 	ListImFriendByUuid(uuid string) ([]*ImFriend, error)
-
-	UpdateLastReadMsgId(uuid string, friendUuid string, lastReadMsgId string) error
+	UpdateLastReadClientMsgId(uuid string, friendUuid string, lastReadMsgId string) error
 }

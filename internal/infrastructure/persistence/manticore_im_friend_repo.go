@@ -17,7 +17,7 @@ type imFriendPO struct {
 	Status        int
 	Created       int64
 	Nexttime      int64
-	LastReadMsgId string
+	LastReadMsgId string `json:"last_read_msg_id" xorm:"last_read_msg_id"`
 }
 
 func convertPOToImFriend(po *imFriendPO) *user.ImFriend {
@@ -65,8 +65,21 @@ type ManticoreImFriendRepo struct {
 	ManticoreDB *xorm.Engine
 }
 
-func (r ManticoreImFriendRepo) UpdateLastReadMsgId(uuid string, friendUuid string, lastReadMsgId string) error {
-	sql := fmt.Sprintf(`update im_friend_list set last_read_msg_id = '%s' where match('@fromuser %s @touser %s');`, lastReadMsgId, uuid, friendUuid)
+func (r ManticoreImFriendRepo) GetFriendByUuid(uuid string, friendUuid string) (*user.ImFriend, error) {
+	var friendPO imFriendPO
+	sql := fmt.Sprintf(`select * from im_friend_list where match('@fromuser %s @touser %s');`, friendUuid, uuid)
+	has, err := r.ManticoreDB.SQL(sql).Get(&friendPO)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return convertPOToImFriend(&friendPO), nil
+}
+
+func (r ManticoreImFriendRepo) UpdateLastReadClientMsgId(uuid string, friendUuid string, lastReadMsgId string) error {
+	sql := fmt.Sprintf(`update im_friend_list set last_read_msg_id = '%s' where match('@fromuser %s @touser %s');`, lastReadMsgId, friendUuid, uuid)
 	_, err := r.ManticoreDB.Exec(sql)
 	return err
 }

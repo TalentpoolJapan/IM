@@ -6,47 +6,22 @@ import (
 )
 
 type AppService struct {
-	imFriendRepo  user.ImFriendRepository
-	userRepo      user.IUserRepository
-	imMessageRepo user.ImMessageRepository
+	imFriendRepo       user.ImFriendRepository
+	userRepo           user.IUserRepository
+	imMessageRepo      user.ImMessageRepository
+	imFriendDomainServ user.ImFriendDomainService
 }
 
 func NewUserAppService(imFriendRepo user.ImFriendRepository,
 	userRepo user.IUserRepository,
-	repository user.ImMessageRepository) AppService {
+	imMessageRepo user.ImMessageRepository,
+	imFriendDomainServ user.ImFriendDomainService) AppService {
 	return AppService{
-		imFriendRepo:  imFriendRepo,
-		userRepo:      userRepo,
-		imMessageRepo: repository,
+		imFriendRepo:       imFriendRepo,
+		userRepo:           userRepo,
+		imMessageRepo:      imMessageRepo,
+		imFriendDomainServ: imFriendDomainServ,
 	}
-}
-
-type GetMyContactsQry struct {
-	Uuid string `json:"uuid"`
-}
-
-type UnreadMessageStateQry struct {
-	Uuid string `json:"uuid"`
-}
-
-type MyContacts struct {
-	Uuid              string `json:"uuid"`
-	FullNameEn        string `json:"full_name_en"`
-	FullNameJa        string `json:"full_name_ja"`
-	Avatar            string `json:"avatar"`
-	IsBlack           bool   `json:"is_black"`
-	LatestMessage     string `json:"latest_message"`
-	LatestContactTime int64  `json:"latest_contact_time"`
-}
-
-type UnreadMessageState struct {
-	Total          int             `json:"total"`
-	UnreadContacts []UnreadContact `json:"unread_contacts"`
-}
-
-type UnreadContact struct {
-	ContactUuid string `json:"contact_uuid"`
-	Count       int    `json:"count"`
 }
 
 func (s AppService) GetMyContacts(qry *GetMyContactsQry) application.MultiResp[MyContacts] {
@@ -100,7 +75,7 @@ func (s AppService) GetMyContacts(qry *GetMyContactsQry) application.MultiResp[M
 	return application.MultiRespOf[MyContacts](myContacts, "get my friends success")
 }
 
-func (s AppService) UnreadMessageState(qry UnreadMessageStateQry) application.SingleResp[UnreadMessageState] {
+func (s AppService) GetUnreadMessageState(qry *UnreadMessageStateQry) application.SingleResp[UnreadMessageState] {
 
 	// get contact
 	friends, err := s.imFriendRepo.ListImFriendByUuid(qry.Uuid)
@@ -120,15 +95,33 @@ func (s AppService) UnreadMessageState(qry UnreadMessageStateQry) application.Si
 		if err != nil || lastReadMsg == nil {
 			continue
 		}
-		unreadMessages, err := s.imMessageRepo.ListMessageAfterMsgId(friend.SessionId(), lastReadMsg.Id)
-		if err != nil && len(unreadMessages) == 0 {
+		unreadMessages, err := s.imMessageRepo.ListMessageAfterCreateTime(friend.SessionId(), lastReadMsg.Created)
+		if err != nil {
 			continue
 		}
-		unreadContacts = append(unreadContacts, UnreadContact{ContactUuid: friend.FriendUuid, Count: len(unreadMessages)})
-		totalCount += len(unreadMessages)
+		// filter self message
+		var unreadMessageCount int
+		for _, message := range unreadMessages {
+			if message.FromUser != qry.Uuid {
+				unreadMessageCount = unreadMessageCount + 1
+			}
+		}
+		if unreadMessageCount == 0 {
+			continue
+		}
+		unreadContacts = append(unreadContacts, UnreadContact{ContactUuid: friend.FriendUuid, Count: unreadMessageCount})
+		totalCount += unreadMessageCount
 	}
 
 	return application.SingleRespOf[UnreadMessageState](
 		UnreadMessageState{Total: totalCount, UnreadContacts: unreadContacts},
 		"get unread message state success")
+}
+
+func (s AppService) SyncLastReadClientMsgId(cmd *SyncLastReadClientMsgIdCmd) application.SingleResp[any] {
+	_, err := s.imFriendDomainServ.SyncLastReadClientMsgId(cmd.Uuid, cmd.FriendUuid, cmd.ClientMsgId)
+	if err != nil {
+		return application.SingleRespFail[any]("sync last read id failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
 }

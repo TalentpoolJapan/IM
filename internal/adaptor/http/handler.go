@@ -32,11 +32,33 @@ func GetUnreadMessageState(c *gin.Context) {
 		return
 	}
 
-	qry := user.UnreadMessageStateQry{
+	qry := &user.UnreadMessageStateQry{
 		Uuid: userToken.Uuid,
 	}
-	unreadMessageState := config.UserAppServ.UnreadMessageState(qry)
+	unreadMessageState := config.UserAppServ.GetUnreadMessageState(qry)
 	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: unreadMessageState.Msg, Data: unreadMessageState.Data}))
+}
+
+func SyncLastReadClientMsgId(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	// 1. get query
+	qry := &user.SyncLastReadClientMsgIdCmd{
+		Uuid: userToken.Uuid,
+	}
+	err = c.ShouldBindJSON(qry)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
+		return
+	}
+
+	// 2. sync last read client msg id
+	syncLastReadClientMsgId := config.UserAppServ.SyncLastReadClientMsgId(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: syncLastReadClientMsgId.Msg, Data: syncLastReadClientMsgId.Data}))
 }
 
 func checkAuth(c *gin.Context) (models.UserToken, error) {
