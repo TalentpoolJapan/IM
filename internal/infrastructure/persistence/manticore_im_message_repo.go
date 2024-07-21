@@ -8,16 +8,16 @@ import (
 
 // region struct
 type imMessagePO struct {
-	Id        int64  `json:"id,omitempty"`
-	Sessionid string `json:"sessionid,omitempty"`
-	Touser    string `json:"touser,omitempty"`
-	Fromuser  string `json:"fromuser,omitempty"`
-	Msg       string `json:"msg,omitempty"`
-	Msgtype   int    `json:"msgtype,omitempty"`
-	Totype    int    `json:"totype,omitempty"`
-	Fromtype  int    `json:"fromtype,omitempty"`
-	Created   int64  `json:"created,omitempty"`
-	Msgid     string `json:"msgid,omitempty"`
+	Id        int64            `json:"id,omitempty"`
+	Sessionid string           `json:"sessionid,omitempty"`
+	Touser    string           `json:"touser,omitempty"`
+	Fromuser  string           `json:"fromuser,omitempty"`
+	Msg       string           `json:"msg,omitempty"`
+	Msgtype   user.MessageType `json:"msgtype,omitempty"`
+	Totype    int              `json:"totype,omitempty"`
+	Fromtype  int              `json:"fromtype,omitempty"`
+	Created   int64            `json:"created,omitempty"`
+	Msgid     string           `json:"msgid,omitempty"`
 }
 
 func convertImMessageEntity(po *imMessagePO) *user.ImMessage {
@@ -61,6 +61,20 @@ func NewManticoreImMessageRepo(engine *xorm.Engine) user.ImMessageRepository {
 
 type ManticoreMessageRepo struct {
 	ManticoreDB *xorm.Engine
+}
+
+func (r ManticoreMessageRepo) ListMessageBeforeCreateTime(sessionId string, createTime int64) ([]user.ImMessage, error) {
+	var data []imMessagePO
+	sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') and created<%d order by created asc`, sessionId, createTime)
+	err := r.ManticoreDB.SQL(sql).Find(&data)
+	if err != nil {
+		return nil, err
+	}
+	var result []user.ImMessage
+	for _, item := range data {
+		result = append(result, *convertImMessageEntity(&item))
+	}
+	return result, nil
 }
 
 func (r ManticoreMessageRepo) ListMessageAfterCreateTime(sessionId string, createTime int64) ([]user.ImMessage, error) {

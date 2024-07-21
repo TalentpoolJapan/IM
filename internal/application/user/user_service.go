@@ -125,3 +125,86 @@ func (s AppService) SyncLastReadClientMsgId(cmd *SyncLastReadClientMsgIdCmd) app
 	}
 	return application.SingleRespOk[any]()
 }
+
+func (s AppService) ListImMessageBeforeClientMsgId(qry *ListImMessageBeforeClientMsgQry) application.MultiResp[ImMessageDTO] {
+	friend, err := s.imFriendRepo.GetFriendByUuid(qry.Uuid, qry.FriendUuid)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get friend failed: " + err.Error())
+	}
+	if friend == nil {
+		return application.MultiRespFail[ImMessageDTO]("get friend failed: friend not exist")
+	}
+
+	curMessage, err := s.imMessageRepo.GetMessageByClientMsgId(friend.SessionId(), qry.ClientMsgId)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: " + err.Error())
+	}
+	if curMessage == nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: message not exist")
+	}
+
+	imMessages, err := s.imMessageRepo.ListMessageBeforeCreateTime(friend.SessionId(), curMessage.Created)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: " + err.Error())
+	}
+
+	var messageDTOs []*ImMessageDTO
+	for _, message := range imMessages {
+		messageDTOs = append(messageDTOs, &ImMessageDTO{
+			Id:        message.Id,
+			Sessionid: message.SessionId,
+			Touser:    message.ToUser,
+			Fromuser:  message.FromUser,
+			Msg:       message.Msg,
+			Msgtype:   int(message.MsgType),
+			Totype:    message.ToType,
+			Fromtype:  message.FromType,
+			Created:   message.Created,
+			Msgid:     message.MsgId,
+		})
+	}
+
+	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
+
+}
+
+func (s AppService) ListImMessageAfterClientMsgId(qry *ListImMessageAfterClientMsgQry) application.MultiResp[ImMessageDTO] {
+	friend, err := s.imFriendRepo.GetFriendByUuid(qry.Uuid, qry.FriendUuid)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get friend failed: " + err.Error())
+	}
+	if friend == nil {
+		return application.MultiRespFail[ImMessageDTO]("get friend failed: friend not exist")
+	}
+
+	curMessage, err := s.imMessageRepo.GetMessageByClientMsgId(friend.SessionId(), qry.ClientMsgId)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: " + err.Error())
+	}
+	if curMessage == nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: message not exist")
+	}
+
+	imMessages, err := s.imMessageRepo.ListMessageAfterCreateTime(friend.SessionId(), curMessage.Created)
+	if err != nil {
+		return application.MultiRespFail[ImMessageDTO]("get message failed: " + err.Error())
+	}
+
+	var messageDTOs []*ImMessageDTO
+	for _, message := range imMessages {
+		messageDTOs = append(messageDTOs, &ImMessageDTO{
+			Id:        message.Id,
+			Sessionid: message.SessionId,
+			Touser:    message.ToUser,
+			Fromuser:  message.FromUser,
+			Msg:       message.Msg,
+			Msgtype:   int(message.MsgType),
+			Totype:    message.ToType,
+			Fromtype:  message.FromType,
+			Created:   message.Created,
+			Msgid:     message.MsgId,
+		})
+	}
+
+	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
+}

@@ -19,3 +19,16 @@ type UnreadContact struct {
 	ContactUuid string `json:"contact_uuid"`
 	Count       int    `json:"count"`
 }
+
+type ImMessageDTO struct {
+	Id        int64  `json:"id,omitempty"`
+	Sessionid string `json:"sessionid,omitempty"`
+	Touser    string `json:"touser,omitempty"`
+	Fromuser  string `json:"fromuser,omitempty"`
+	Msg       string `json:"msg,omitempty"`
+	Msgtype   int    `json:"msgtype,omitempty"`
+	Totype    int    `json:"totype,omitempty"`
+	Fromtype  int    `json:"fromtype,omitempty"`
+	Created   int64  `json:"created,omitempty"`
+	Msgid     string `json:"msgid,omitempty"`
+}

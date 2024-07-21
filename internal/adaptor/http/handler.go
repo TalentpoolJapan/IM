@@ -61,6 +61,52 @@ func SyncLastReadClientMsgId(c *gin.Context) {
 	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: syncLastReadClientMsgId.Msg, Data: syncLastReadClientMsgId.Data}))
 }
 
+func ListBeforeImMessage(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	friendUuid := c.Query("friend_uuid")
+	clientMsgId := c.Query("client_msg_id")
+	qry := &user.ListImMessageBeforeClientMsgQry{
+		Uuid:        userToken.Uuid,
+		FriendUuid:  friendUuid,
+		ClientMsgId: clientMsgId,
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
+		return
+	}
+
+	msgs := config.UserAppServ.ListImMessageBeforeClientMsgId(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: msgs.Msg, Data: msgs.Data}))
+}
+
+func ListAfterImMessage(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	friendUuid := c.Query("friend_uuid")
+	clientMsgId := c.Query("client_msg_id")
+	qry := &user.ListImMessageAfterClientMsgQry{
+		Uuid:        userToken.Uuid,
+		FriendUuid:  friendUuid,
+		ClientMsgId: clientMsgId,
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
+		return
+	}
+
+	msgs := config.UserAppServ.ListImMessageAfterClientMsgId(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: msgs.Msg, Data: msgs.Data}))
+}
+
 func checkAuth(c *gin.Context) (models.UserToken, error) {
 	auth := c.Query("token")
 
