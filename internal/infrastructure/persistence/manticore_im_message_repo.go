@@ -63,6 +63,24 @@ type ManticoreMessageRepo struct {
 	ManticoreDB *xorm.Engine
 }
 
+func (r ManticoreMessageRepo) ListMessageRecent(sessionId string, size int) ([]user.ImMessage, error) {
+	var querySize = size
+	if querySize <= 0 {
+		querySize = 10
+	}
+	var data []imMessagePO
+	sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') order by created desc limit %d`, sessionId, querySize)
+	err := r.ManticoreDB.SQL(sql).Find(&data)
+	if err != nil {
+		return nil, err
+	}
+	var result []user.ImMessage
+	for _, item := range data {
+		result = append(result, *convertImMessageEntity(&item))
+	}
+	return result, nil
+}
+
 func (r ManticoreMessageRepo) ListMessageBeforeCreateTime(sessionId string, createTime int64) ([]user.ImMessage, error) {
 	var data []imMessagePO
 	sql := fmt.Sprintf(`select * from im_message where match('@sessionid %s') and created<%d order by created asc`, sessionId, createTime)

@@ -7,6 +7,7 @@ import (
 	"imserver/models"
 	"imserver/util"
 	"net/http"
+	"strconv"
 )
 
 func GetMyContacts(c *gin.Context) {
@@ -61,6 +62,29 @@ func SyncLastReadClientMsgId(c *gin.Context) {
 	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: syncLastReadClientMsgId.Msg, Data: syncLastReadClientMsgId.Data}))
 }
 
+func ListRecentImMessage(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	friendUuid := c.Query("friend_uuid")
+	size, _ := strconv.Atoi(c.Query("size"))
+	if friendUuid == "" {
+		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
+		return
+	}
+	var qry = &user.ListImMessageRecentQry{
+		Uuid:       userToken.Uuid,
+		FriendUuid: friendUuid,
+		Size:       size,
+	}
+
+	msgs := config.UserAppServ.ListImMessageRecent(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: msgs.Msg, Data: msgs.Data}))
+}
+
 func ListBeforeImMessage(c *gin.Context) {
 	userToken, err := checkAuth(c)
 	if err != nil {
@@ -75,7 +99,7 @@ func ListBeforeImMessage(c *gin.Context) {
 		FriendUuid:  friendUuid,
 		ClientMsgId: clientMsgId,
 	}
-	if err != nil {
+	if qry.Uuid == "" || qry.ClientMsgId == "" {
 		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
 		return
 	}
@@ -98,7 +122,7 @@ func ListAfterImMessage(c *gin.Context) {
 		FriendUuid:  friendUuid,
 		ClientMsgId: clientMsgId,
 	}
-	if err != nil {
+	if qry.Uuid == "" || qry.ClientMsgId == "" {
 		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
 		return
 	}

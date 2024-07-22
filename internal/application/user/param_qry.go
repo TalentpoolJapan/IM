@@ -8,6 +8,12 @@ type UnreadMessageStateQry struct {
 	Uuid string `json:"uuid"`
 }
 
+type ListImMessageRecentQry struct {
+	Uuid       string `json:"uuid"`
+	FriendUuid string `json:"friend_uuid"`
+	Size       int    `json:"size"`
+}
+
 type ListImMessageBeforeClientMsgQry struct {
 	Uuid        string `json:"uuid"`
 	FriendUuid  string `json:"friend_uuid"`
