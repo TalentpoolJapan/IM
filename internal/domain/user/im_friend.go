@@ -18,7 +18,8 @@ type ImFriend struct {
 	NextTime int64
 
 	// 下面字段是后面添加的
-	LastReadMsgId string
+	LastReadMsgId string // 最后一次已读的消息id
+	EverContacted bool   // 是否与这个朋友曾经有联系
 }
 
 func (f ImFriend) SessionId() string {
@@ -42,4 +43,5 @@ type ImFriendRepository interface {
 	GetFriendByUuid(uuid string, friendUuid string) (*ImFriend, error)
 	ListImFriendByUuid(uuid string) ([]*ImFriend, error)
 	UpdateLastReadClientMsgId(uuid string, friendUuid string, lastReadMsgId string) error
+	UpdateContactStatus(uuid string, friendUuid string) error
 }

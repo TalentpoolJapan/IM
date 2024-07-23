@@ -414,26 +414,26 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		c.M.MemDB.Get("Profile").(*gmap.AnyAnyMap).Set(wsMsg.ToUser, userinfo)
 
 		//读取用户的联系人
-		friendList, err := c.M.GetUserContactsByUUID(wsMsg.ToUser)
+		//friendList, err := c.M.GetUserContactsByUUID(wsMsg.ToUser)
+		friendList, err := config.ImFriendRepo.ListImFriendByUuid(wsMsg.ToUser)
 		if err != nil {
 			c.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Remove(wsMsg.ToUser)
 			s.Send <- []byte(err.Error())
 			return
-
 		}
 		//设置联系人和黑名单
 		if len(friendList) > 0 {
 			for _, v := range friendList {
-				if v.Isblack == 0 {
-					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Contacts").(*gmap.AnyAnyMap).Set(v.Fromuser, models.RecvStatus{
+				if !v.IsBlack {
+					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Contacts").(*gmap.AnyAnyMap).Set(v.UserUuid, models.RecvStatus{
 						RecvCount:    v.Count,
-						NextRecvTime: v.Nexttime,
+						NextRecvTime: v.NextTime,
 					})
 				}
-				if v.Isblack == 1 {
-					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Set(v.Fromuser, models.RecvStatus{
+				if v.IsBlack {
+					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Set(v.UserUuid, models.RecvStatus{
 						RecvCount:    v.Count,
-						NextRecvTime: v.Nexttime,
+						NextRecvTime: v.NextTime,
 					})
 				}
 			}
@@ -475,6 +475,13 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 	lock.Unlock()
 	//标记是否可以发送消息
 	var canSendMsg bool = false
+	var everContacted bool
+	// fixme 缓存
+	targetFriend, _ := config.ImFriendRepo.GetFriendByUuid(wsMsg.ToUser, s.UUID)
+	if targetFriend != nil {
+		everContacted = targetFriend.EverContacted
+		canSendMsg = targetFriend.EverContacted
+	}
 
 	//新的朋友关系不用判断黑名单和可以发送消息的数量
 	if !isNew {
@@ -545,7 +552,7 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 			canSendMsg = true
 		}
 
-		if canSendMsg {
+		if canSendMsg || everContacted {
 			//重置它可以给我发消息的次数
 			c.M.MemDB.Get(s.UUID).(*gmap.AnyAnyMap).Get("Contacts").(*gmap.AnyAnyMap).Set(wsMsg.ToUser, models.RecvStatus{
 				RecvCount:    config.CAN_SEND_COUNT,
@@ -611,6 +618,10 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 				return
 			}
 			sendMsg.ReadId = uint64(readId)
+
+			// 设置曾经联系过
+			// fixme 缓存
+			config.ImFriendRepo.UpdateContactStatus(s.UUID, wsMsg.ToUser)
 		}
 
 	}
@@ -1206,19 +1217,25 @@ func (c *Controller) CheckOrSetFriends(uuid, touser string) (isNew bool, err err
 	if err != nil {
 		return
 	}
-	sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, uuid, touser, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
-	_, err = session.Exec(sql)
-	if err != nil {
-		batch.Rollback()
-		session.Rollback()
-		return
+	existFriend, err := config.ImFriendRepo.GetFriendByUuid(uuid, touser)
+	if existFriend == nil {
+		sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, uuid, touser, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
+		_, err = session.Exec(sql)
+		if err != nil {
+			batch.Rollback()
+			session.Rollback()
+			return
+		}
 	}
-	sql = fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, touser, uuid, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
-	_, err = session.Exec(sql)
-	if err != nil {
-		batch.Rollback()
-		session.Rollback()
-		return
+	anotherExistFriend, err := config.ImFriendRepo.GetFriendByUuid(touser, uuid)
+	if anotherExistFriend == nil {
+		sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, touser, uuid, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
+		_, err = session.Exec(sql)
+		if err != nil {
+			batch.Rollback()
+			session.Rollback()
+			return
+		}
 	}
 	//一致性提交
 	err = batch.Commit()

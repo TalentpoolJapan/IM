@@ -26,5 +26,6 @@ type ImMessageRepository interface {
 	ListMessageAfterCreateTime(sessionId string, createTime int64) ([]ImMessage, error)
 	ListMessageBeforeCreateTime(sessionId string, createTime int64) ([]ImMessage, error)
 	ListMessageRecent(sessionId string, size int) ([]ImMessage, error)
+	ListMessageRecentBy(sessionId string, size int, userUuid string) ([]ImMessage, error)
 	GetMessageByClientMsgId(sessionId string, clientMsgId string) (*ImMessage, error)
 }

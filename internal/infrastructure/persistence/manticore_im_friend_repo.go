@@ -18,6 +18,7 @@ type imFriendPO struct {
 	Created       int64
 	Nexttime      int64
 	LastReadMsgId string `json:"last_read_msg_id" xorm:"last_read_msg_id"`
+	EverContacted bool   `json:"ever_contacted" xorm:"ever_contacted"`
 }
 
 func convertPOToImFriend(po *imFriendPO) *user.ImFriend {
@@ -31,6 +32,7 @@ func convertPOToImFriend(po *imFriendPO) *user.ImFriend {
 		Created:       po.Created,
 		NextTime:      po.Nexttime,
 		LastReadMsgId: po.LastReadMsgId,
+		EverContacted: po.EverContacted,
 	}
 }
 func convertImFriendToPO(friend *user.ImFriend) *imFriendPO {
@@ -48,6 +50,7 @@ func convertImFriendToPO(friend *user.ImFriend) *imFriendPO {
 		Created:       friend.Created,
 		Nexttime:      friend.NextTime,
 		LastReadMsgId: friend.LastReadMsgId,
+		EverContacted: friend.EverContacted,
 	}
 }
 
@@ -65,9 +68,15 @@ type ManticoreImFriendRepo struct {
 	ManticoreDB *xorm.Engine
 }
 
+func (r ManticoreImFriendRepo) UpdateContactStatus(uuid string, friendUuid string) error {
+	sql := fmt.Sprintf(`update im_friend_list set ever_contacted = 1 where match('@fromuser %s @touser %s');`, uuid, friendUuid)
+	_, err := r.ManticoreDB.Exec(sql)
+	return err
+}
+
 func (r ManticoreImFriendRepo) GetFriendByUuid(uuid string, friendUuid string) (*user.ImFriend, error) {
 	var friendPO imFriendPO
-	sql := fmt.Sprintf(`select * from im_friend_list where match('@fromuser %s @touser %s');`, friendUuid, uuid)
+	sql := fmt.Sprintf(`select * from im_friend_list where match('@fromuser %s @touser %s');`, uuid, friendUuid)
 	has, err := r.ManticoreDB.SQL(sql).Get(&friendPO)
 	if err != nil {
 		return nil, err
@@ -79,14 +88,14 @@ func (r ManticoreImFriendRepo) GetFriendByUuid(uuid string, friendUuid string) (
 }
 
 func (r ManticoreImFriendRepo) UpdateLastReadClientMsgId(uuid string, friendUuid string, lastReadMsgId string) error {
-	sql := fmt.Sprintf(`update im_friend_list set last_read_msg_id = '%s' where match('@fromuser %s @touser %s');`, lastReadMsgId, friendUuid, uuid)
+	sql := fmt.Sprintf(`update im_friend_list set last_read_msg_id = '%s' where match('@fromuser %s @touser %s');`, lastReadMsgId, uuid, friendUuid)
 	_, err := r.ManticoreDB.Exec(sql)
 	return err
 }
 
 func (r ManticoreImFriendRepo) ListImFriendByUuid(uuid string) (friends []*user.ImFriend, err error) {
 	var friendPOs []*imFriendPO
-	sql := fmt.Sprintf(`select * from im_friend_list where match('@touser %s') order by isblack asc;`, uuid)
+	sql := fmt.Sprintf(`select * from im_friend_list where match('@fromuser %s') order by isblack asc;`, uuid)
 	err = r.ManticoreDB.SQL(sql).Find(&friendPOs)
 	for _, friendPO := range friendPOs {
 		friends = append(friends, convertPOToImFriend(friendPO))
