@@ -23,9 +23,10 @@ type imFriendPO struct {
 
 func convertPOToImFriend(po *imFriendPO) *user.ImFriend {
 	return &user.ImFriend{
-		Id:            po.Id,
-		UserUuid:      po.Touser,
-		FriendUuid:    po.Fromuser,
+		Id: po.Id,
+
+		UserUuid:      po.Fromuser,
+		FriendUuid:    po.Touser,
 		IsBlack:       po.Isblack == 1,
 		Count:         po.Count,
 		Status:        po.Status,
@@ -42,8 +43,8 @@ func convertImFriendToPO(friend *user.ImFriend) *imFriendPO {
 	}
 	return &imFriendPO{
 		Id:            friend.Id,
-		Touser:        friend.UserUuid,
-		Fromuser:      friend.FriendUuid,
+		Fromuser:      friend.UserUuid,
+		Touser:        friend.FriendUuid,
 		Isblack:       isBlack,
 		Count:         friend.Count,
 		Status:        friend.Status,
