@@ -1,6 +1,9 @@
 package user
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 type ImFriendDomainService struct {
 	imFriendRepo        ImFriendRepository
@@ -42,4 +45,21 @@ func (s *ImFriendDomainService) SyncLastReadClientMsgId(userUuid string, friendU
 		s.imFriendRepo.UpdateLastReadClientMsgId(userUuid, friendUuid, clientMsgId)
 	}
 	return true, nil
+}
+
+func (s *ImFriendDomainService) AddFriend(userUuid string, friendUuid string) error {
+	imFriend, err := s.imFriendRepo.GetFriendByUuid(userUuid, friendUuid)
+	if err != nil {
+		return err
+	}
+	if imFriend != nil {
+		return errors.New("friend already exists")
+	}
+	imFriend = &ImFriend{
+		UserUuid:   userUuid,
+		FriendUuid: friendUuid,
+		Count:      2,
+		Created:    time.Now().UnixMicro(),
+	}
+	return s.imFriendRepo.AddImFriend(*imFriend)
 }

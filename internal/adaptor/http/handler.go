@@ -62,6 +62,28 @@ func SyncLastReadClientMsgId(c *gin.Context) {
 	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: syncLastReadClientMsgId.Msg, Data: syncLastReadClientMsgId.Data}))
 }
 
+func AddImFriend(c *gin.Context) {
+	userToken, err := checkAuth(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, NewApiRestResult(RestResult{Code: 0, Message: "auth failed"}))
+		return
+	}
+
+	// 1. get query
+	qry := &user.AddImFriendCmd{
+		Uuid: userToken.Uuid,
+	}
+	err = c.ShouldBindJSON(qry)
+	if err != nil || qry.FriendUuid == "" {
+		c.JSON(http.StatusBadRequest, NewApiRestResult(RestResult{Code: 0, Message: "param error"}))
+		return
+	}
+
+	// 2. add im friend
+	addImFriend := config.UserAppServ.AddImFriend(qry)
+	c.JSON(http.StatusOK, NewApiRestResult(RestResult{Code: 0, Message: addImFriend.Msg, Data: addImFriend.Data}))
+}
+
 func ListRecentImMessage(c *gin.Context) {
 	userToken, err := checkAuth(c)
 	if err != nil {

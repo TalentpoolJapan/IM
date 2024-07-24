@@ -10,4 +10,5 @@ func RegisterHandler(engine *gin.Engine) {
 	engine.GET("/v1/msg_recent", ListRecentImMessage)
 
 	engine.POST("/v1/sync_last_read", SyncLastReadClientMsgId)
+	engine.POST("/v1/add_friend", AddImFriend)
 }

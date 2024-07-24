@@ -126,6 +126,14 @@ func (s AppService) SyncLastReadClientMsgId(cmd *SyncLastReadClientMsgIdCmd) app
 	return application.SingleRespOk[any]()
 }
 
+func (s AppService) AddImFriend(cmd *AddImFriendCmd) application.SingleResp[any] {
+	err := s.imFriendDomainServ.AddFriend(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("add friend failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
+}
+
 func (s AppService) ListImMessageRecent(qry *ListImMessageRecentQry) application.MultiResp[ImMessageDTO] {
 	friend, err := s.imFriendRepo.GetFriendByUuid(qry.Uuid, qry.FriendUuid)
 	if err != nil {

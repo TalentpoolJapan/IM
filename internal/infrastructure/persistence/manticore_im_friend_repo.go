@@ -3,6 +3,7 @@ package persistence
 import (
 	"fmt"
 	"imserver/internal/domain/user"
+	"time"
 	"xorm.io/xorm"
 )
 
@@ -67,6 +68,15 @@ func NewManticoreImFriendRepo(engine *xorm.Engine) user.ImFriendRepository {
 
 type ManticoreImFriendRepo struct {
 	ManticoreDB *xorm.Engine
+}
+
+func (r ManticoreImFriendRepo) AddImFriend(friend user.ImFriend) error {
+	sql := fmt.Sprintf(`insert into im_friend_list (fromuser,touser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, friend.UserUuid, friend.FriendUuid, 0, 2, 1, time.Now().UnixMilli(), 0)
+	_, err := r.ManticoreDB.Exec(sql)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r ManticoreImFriendRepo) UpdateContactStatus(uuid string, friendUuid string) error {

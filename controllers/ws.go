@@ -1219,7 +1219,7 @@ func (c *Controller) CheckOrSetFriends(uuid, touser string) (isNew bool, err err
 	}
 	existFriend, err := config.ImFriendRepo.GetFriendByUuid(uuid, touser)
 	if existFriend == nil {
-		sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, uuid, touser, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
+		sql := fmt.Sprintf(`insert into im_friend_list (fromuser,touser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, uuid, touser, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
 		_, err = session.Exec(sql)
 		if err != nil {
 			batch.Rollback()
@@ -1229,7 +1229,7 @@ func (c *Controller) CheckOrSetFriends(uuid, touser string) (isNew bool, err err
 	}
 	anotherExistFriend, err := config.ImFriendRepo.GetFriendByUuid(touser, uuid)
 	if anotherExistFriend == nil {
-		sql := fmt.Sprintf(`insert into im_friend_list (touser,fromuser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, touser, uuid, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
+		sql := fmt.Sprintf(`insert into im_friend_list (fromuser,touser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, touser, uuid, 0, config.CAN_SEND_COUNT, 1, time.Now().UnixMilli(), 0)
 		_, err = session.Exec(sql)
 		if err != nil {
 			batch.Rollback()
