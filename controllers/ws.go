@@ -414,8 +414,8 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		c.M.MemDB.Get("Profile").(*gmap.AnyAnyMap).Set(wsMsg.ToUser, userinfo)
 
 		//读取用户的联系人
-		//friendList, err := c.M.GetUserContactsByUUID(wsMsg.ToUser)
-		friendList, err := config.ImFriendRepo.ListImFriendByUuid(wsMsg.ToUser)
+		friendList, err := c.M.GetUserContactsByUUID(wsMsg.ToUser)
+		//friendList, err := config.ImFriendRepo.ListImFriendByUuid(wsMsg.ToUser)
 		if err != nil {
 			c.M.MemDB.Get("IsInitUser").(*gmap.AnyAnyMap).Remove(wsMsg.ToUser)
 			s.Send <- []byte(err.Error())
@@ -424,16 +424,16 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		//设置联系人和黑名单
 		if len(friendList) > 0 {
 			for _, v := range friendList {
-				if !v.IsBlack {
-					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Contacts").(*gmap.AnyAnyMap).Set(v.UserUuid, models.RecvStatus{
+				if v.Isblack == 0 {
+					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Contacts").(*gmap.AnyAnyMap).Set(v.Fromuser, models.RecvStatus{
 						RecvCount:    v.Count,
-						NextRecvTime: v.NextTime,
+						NextRecvTime: v.Nexttime,
 					})
 				}
-				if v.IsBlack {
-					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Set(v.UserUuid, models.RecvStatus{
+				if v.Isblack == 1 {
+					c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Set(v.Fromuser, models.RecvStatus{
 						RecvCount:    v.Count,
-						NextRecvTime: v.NextTime,
+						NextRecvTime: v.Nexttime,
 					})
 				}
 			}
