@@ -2,25 +2,25 @@ package user
 
 import (
 	"imserver/internal/application"
+	"imserver/internal/domain/imfriend"
+	"imserver/internal/domain/immessage"
 	"imserver/internal/domain/user"
+	"time"
 )
 
 type AppService struct {
-	imFriendRepo       user.ImFriendRepository
-	userRepo           user.IUserRepository
-	imMessageRepo      user.ImMessageRepository
-	imFriendDomainServ user.ImFriendDomainService
+	imFriendRepo  imfriend.ImFriendRepository
+	userRepo      user.IUserRepository
+	imMessageRepo immessage.ImMessageRepository
 }
 
-func NewUserAppService(imFriendRepo user.ImFriendRepository,
+func NewUserAppService(imFriendRepo imfriend.ImFriendRepository,
 	userRepo user.IUserRepository,
-	imMessageRepo user.ImMessageRepository,
-	imFriendDomainServ user.ImFriendDomainService) AppService {
+	imMessageRepo immessage.ImMessageRepository) AppService {
 	return AppService{
-		imFriendRepo:       imFriendRepo,
-		userRepo:           userRepo,
-		imMessageRepo:      imMessageRepo,
-		imFriendDomainServ: imFriendDomainServ,
+		imFriendRepo:  imFriendRepo,
+		userRepo:      userRepo,
+		imMessageRepo: imMessageRepo,
 	}
 }
 
@@ -45,7 +45,7 @@ func (s AppService) GetMyContacts(qry *GetMyContactsQry) application.MultiResp[M
 	}
 
 	imMessage, err := s.imMessageRepo.LatestImMessageBySessionId(friendSessionIds)
-	imMessageMap := make(map[string]*user.ImMessage)
+	imMessageMap := make(map[string]*immessage.ImMessage)
 	for _, message := range imMessage {
 		imMessageMap[message.SessionId] = message
 	}
@@ -119,15 +119,53 @@ func (s AppService) GetUnreadMessageState(qry *UnreadMessageStateQry) applicatio
 }
 
 func (s AppService) SyncLastReadClientMsgId(cmd *SyncLastReadClientMsgIdCmd) application.SingleResp[any] {
-	_, err := s.imFriendDomainServ.SyncLastReadClientMsgId(cmd.Uuid, cmd.FriendUuid, cmd.ClientMsgId)
+	imFriend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
 	if err != nil {
 		return application.SingleRespFail[any]("sync last read id failed: " + err.Error())
+	}
+	if imFriend == nil {
+		return application.SingleRespFail[any]("friend not found")
+	}
+	sessionId := imFriend.SessionId()
+	currentMessage, err := s.imMessageRepo.GetMessageByClientMsgId(sessionId, cmd.ClientMsgId)
+	if err != nil {
+		return application.SingleRespFail[any]("sync last read id failed: " + err.Error())
+	}
+	if currentMessage == nil {
+		return application.SingleRespFail[any]("message not found")
+	}
+
+	var lastClientMsgIdCreateTime int64
+	if imFriend.LastReadMsgId != "" {
+		lastReadMsg, err := s.imMessageRepo.GetMessageByClientMsgId(sessionId, imFriend.LastReadMsgId)
+		if err == nil && lastReadMsg != nil {
+			lastClientMsgIdCreateTime = lastReadMsg.Created
+		}
+	}
+	if currentMessage.Created > lastClientMsgIdCreateTime {
+		err := s.imFriendRepo.UpdateLastReadClientMsgId(cmd.Uuid, cmd.FriendUuid, cmd.ClientMsgId)
+		if err != nil {
+			return application.SingleRespFail[any]("sync last read id failed: " + err.Error())
+		}
 	}
 	return application.SingleRespOk[any]()
 }
 
 func (s AppService) AddImFriend(cmd *AddImFriendCmd) application.SingleResp[any] {
-	err := s.imFriendDomainServ.AddFriend(cmd.Uuid, cmd.FriendUuid)
+	imFriend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("add friend failed: " + err.Error())
+	}
+	if imFriend != nil {
+		return application.SingleRespFail[any]("friend already exists")
+	}
+	imFriend = &imfriend.ImFriend{
+		UserUuid:   cmd.Uuid,
+		FriendUuid: cmd.FriendUuid,
+		Count:      2,
+		Created:    time.Now().UnixMicro(),
+	}
+	err = s.imFriendRepo.AddImFriend(*imFriend)
 	if err != nil {
 		return application.SingleRespFail[any]("add friend failed: " + err.Error())
 	}
@@ -150,18 +188,11 @@ func (s AppService) ListImMessageRecent(qry *ListImMessageRecentQry) application
 
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
-		messageDTOs = append(messageDTOs, &ImMessageDTO{
-			Id:        message.Id,
-			Sessionid: message.SessionId,
-			Touser:    message.ToUser,
-			Fromuser:  message.FromUser,
-			Msg:       message.Msg,
-			Msgtype:   int(message.MsgType),
-			Totype:    message.ToType,
-			Fromtype:  message.FromType,
-			Created:   message.Created,
-			Msgid:     message.MsgId,
-		})
+		// 系统消息只有自己能看
+		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+			continue
+		}
+		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
 	}
 
 	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
@@ -192,18 +223,11 @@ func (s AppService) ListImMessageBeforeClientMsgId(qry *ListImMessageBeforeClien
 
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
-		messageDTOs = append(messageDTOs, &ImMessageDTO{
-			Id:        message.Id,
-			Sessionid: message.SessionId,
-			Touser:    message.ToUser,
-			Fromuser:  message.FromUser,
-			Msg:       message.Msg,
-			Msgtype:   int(message.MsgType),
-			Totype:    message.ToType,
-			Fromtype:  message.FromType,
-			Created:   message.Created,
-			Msgid:     message.MsgId,
-		})
+		// 系统消息只有自己能看
+		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+			continue
+		}
+		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
 	}
 
 	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
@@ -234,19 +258,55 @@ func (s AppService) ListImMessageAfterClientMsgId(qry *ListImMessageAfterClientM
 
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
-		messageDTOs = append(messageDTOs, &ImMessageDTO{
-			Id:        message.Id,
-			Sessionid: message.SessionId,
-			Touser:    message.ToUser,
-			Fromuser:  message.FromUser,
-			Msg:       message.Msg,
-			Msgtype:   int(message.MsgType),
-			Totype:    message.ToType,
-			Fromtype:  message.FromType,
-			Created:   message.Created,
-			Msgid:     message.MsgId,
-		})
+		// 系统消息只有自己能看
+		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+			continue
+		}
+		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
 	}
 
 	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
+}
+
+func (s AppService) AddSystemMessage(cmd *AddSystemMessageCmd) application.SingleResp[any] {
+	imFriend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("add system message failed: " + err.Error())
+	}
+	if imFriend == nil {
+		return application.SingleRespFail[any]("add system message failed: friend not exist")
+	}
+
+	imMessage := &immessage.ImMessage{
+		SessionId: imFriend.SessionId(),
+		ToUser:    cmd.FriendUuid,
+		FromUser:  cmd.Uuid,
+		Msg:       cmd.Msg,
+		MsgType:   immessage.SystemMsg,
+		ToType:    0,
+		FromType:  0,
+		Created:   time.Now().UnixMicro(),
+		MsgId:     cmd.SystemMsgId,
+	}
+	_, err = s.imMessageRepo.SaveImMessage(*imMessage)
+	if err != nil {
+		return application.SingleRespFail[any]("add system message failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
+
+}
+
+func buildImMessageDTO(message *immessage.ImMessage) *ImMessageDTO {
+	return &ImMessageDTO{
+		Id:        message.Id,
+		Sessionid: message.SessionId,
+		Touser:    message.ToUser,
+		Fromuser:  message.FromUser,
+		Msg:       message.Msg,
+		Msgtype:   int(message.MsgType),
+		Totype:    message.ToType,
+		Fromtype:  message.FromType,
+		Created:   message.Created,
+		Msgid:     message.MsgId,
+	}
 }
