@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"imserver/config"
+	"imserver/internal/application/user"
 	"imserver/models"
 	"imserver/util"
 	"log"
@@ -642,6 +643,14 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		}
 		message, _ := json.Marshal(&errorMsg)
 		c.SendUsersMsg(s.UUID, message)
+
+		addSystemMessageCmd := &user.AddSystemMessageCmd{
+			Uuid:        s.UUID,
+			FriendUuid:  wsMsg.ToUser,
+			Msg:         "聊天消息达到上限（系统消息多语言key替代）",
+			SystemMsgId: wsMsg.MsgId,
+		}
+		config.UserAppServ.AddSystemMessage(addSystemMessageCmd)
 	}
 
 }
