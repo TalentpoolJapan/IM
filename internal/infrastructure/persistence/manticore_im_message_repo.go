@@ -157,7 +157,7 @@ func (r ManticoreMessageRepo) LatestImMessageBySessionId(sessionIds []string) ([
 }
 
 func (r ManticoreMessageRepo) SaveImMessage(imMessage immessage.ImMessage) (int64, error) {
-	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid,msg_code) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s')`,
+	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid,msg_code) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s','%s')`,
 		imMessage.SessionId, imMessage.ToUser, imMessage.FromUser, imMessage.Msg, imMessage.MsgType, imMessage.ToType, imMessage.FromType, time.Now().UnixMicro(), imMessage.MsgId, imMessage.MsgCode)
 	res, err := r.ManticoreDB.Exec(sql)
 	if err != nil {

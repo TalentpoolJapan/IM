@@ -304,6 +304,7 @@ func buildImMessageDTO(message *immessage.ImMessage) *ImMessageDTO {
 		Touser:    message.ToUser,
 		Fromuser:  message.FromUser,
 		Msg:       message.Msg,
+		MsgCode:   message.MsgCode,
 		Msgtype:   int(message.MsgType),
 		Totype:    message.ToType,
 		Fromtype:  message.FromType,
