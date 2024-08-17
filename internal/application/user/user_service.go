@@ -282,6 +282,7 @@ func (s AppService) AddSystemMessage(cmd *AddSystemMessageCmd) application.Singl
 		ToUser:    cmd.FriendUuid,
 		FromUser:  cmd.Uuid,
 		Msg:       cmd.Msg,
+		MsgCode:   cmd.MsgCode,
 		MsgType:   immessage.SystemMsg,
 		ToType:    0,
 		FromType:  0,

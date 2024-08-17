@@ -15,6 +15,7 @@ type imMessagePO struct {
 	Fromuser  string                `json:"fromuser,omitempty"`
 	Msg       string                `json:"msg,omitempty"`
 	Msgtype   immessage.MessageType `json:"msgtype,omitempty"`
+	MsgCode   string                `json:"msg_code,omitempty"`
 	Totype    int                   `json:"totype,omitempty"`
 	Fromtype  int                   `json:"fromtype,omitempty"`
 	Created   int64                 `json:"created,omitempty"`
@@ -29,24 +30,11 @@ func convertImMessageEntity(po *imMessagePO) *immessage.ImMessage {
 		FromUser:  po.Fromuser,
 		Msg:       po.Msg,
 		MsgType:   po.Msgtype,
+		MsgCode:   po.MsgCode,
 		ToType:    po.Totype,
 		FromType:  po.Fromtype,
 		Created:   po.Created,
 		MsgId:     po.Msgid,
-	}
-}
-func convertImMessagePO(msg *immessage.ImMessage) *imMessagePO {
-	return &imMessagePO{
-		Id:        msg.Id,
-		Sessionid: msg.SessionId,
-		Touser:    msg.ToUser,
-		Fromuser:  msg.FromUser,
-		Msg:       msg.Msg,
-		Msgtype:   msg.MsgType,
-		Totype:    msg.ToType,
-		Fromtype:  msg.FromType,
-		Created:   msg.Created,
-		Msgid:     msg.MsgId,
 	}
 }
 
@@ -169,8 +157,8 @@ func (r ManticoreMessageRepo) LatestImMessageBySessionId(sessionIds []string) ([
 }
 
 func (r ManticoreMessageRepo) SaveImMessage(imMessage immessage.ImMessage) (int64, error) {
-	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s')`,
-		imMessage.SessionId, imMessage.ToUser, imMessage.FromUser, imMessage.Msg, imMessage.MsgType, imMessage.ToType, imMessage.FromType, time.Now().UnixMicro(), imMessage.MsgId)
+	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid,msg_code) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s')`,
+		imMessage.SessionId, imMessage.ToUser, imMessage.FromUser, imMessage.Msg, imMessage.MsgType, imMessage.ToType, imMessage.FromType, time.Now().UnixMicro(), imMessage.MsgId, imMessage.MsgCode)
 	res, err := r.ManticoreDB.Exec(sql)
 	if err != nil {
 		return 0, err

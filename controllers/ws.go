@@ -501,7 +501,8 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 			addSystemMessageCmd := &user.AddSystemMessageCmd{
 				Uuid:        s.UUID,
 				FriendUuid:  wsMsg.ToUser,
-				Msg:         "对方已把你拉黑（系统消息多语言key替代）",
+				Msg:         wsMsg.Msg,
+				MsgCode:     "对方已把你拉黑（系统消息多语言key替代）",
 				SystemMsgId: wsMsg.MsgId,
 			}
 			config.UserAppServ.AddSystemMessage(addSystemMessageCmd)
@@ -655,7 +656,8 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		addSystemMessageCmd := &user.AddSystemMessageCmd{
 			Uuid:        s.UUID,
 			FriendUuid:  wsMsg.ToUser,
-			Msg:         "聊天消息达到上限（系统消息多语言key替代）",
+			Msg:         wsMsg.Msg,
+			MsgCode:     "聊天消息达到上限（系统消息多语言key替代）",
 			SystemMsgId: wsMsg.MsgId,
 		}
 		config.UserAppServ.AddSystemMessage(addSystemMessageCmd)

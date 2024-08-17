@@ -14,8 +14,9 @@ type ImMessage struct {
 	FromUser  string      `json:"fromuser,omitempty"`
 	Msg       string      `json:"msg,omitempty"`
 	MsgType   MessageType `json:"msgtype,omitempty"`
-	ToType    int         `json:"totype,omitempty"`
-	FromType  int         `json:"fromtype,omitempty"`
-	Created   int64       `json:"created,omitempty"`
-	MsgId     string      `json:"msgid,omitempty"`
+	MsgCode   string
+	ToType    int    `json:"totype,omitempty"`
+	FromType  int    `json:"fromtype,omitempty"`
+	Created   int64  `json:"created,omitempty"`
+	MsgId     string `json:"msgid,omitempty"`
 }

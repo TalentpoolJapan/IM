@@ -16,4 +16,5 @@ type AddSystemMessageCmd struct {
 	FriendUuid  string `json:"friend_uuid"`
 	Msg         string `json:"msg"`
 	SystemMsgId string `json:"system_msg_id"`
+	MsgCode     string `json:"msg_code"`
 }
