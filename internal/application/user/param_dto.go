@@ -26,7 +26,6 @@ type ImMessageDTO struct {
 	Touser    string `json:"touser,omitempty"`
 	Fromuser  string `json:"fromuser,omitempty"`
 	Msg       string `json:"msg,omitempty"`
-	MsgCode   string `json:"msg_code,omitempty"`
 	Msgtype   int    `json:"msgtype,omitempty"`
 	Totype    int    `json:"totype,omitempty"`
 	Fromtype  int    `json:"fromtype,omitempty"`

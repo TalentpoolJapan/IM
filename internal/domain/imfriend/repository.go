@@ -6,4 +6,5 @@ type ImFriendRepository interface {
 	AddImFriend(friend ImFriend) error
 	UpdateLastReadClientMsgId(uuid string, friendUuid string, lastReadMsgId string) error
 	UpdateContactStatus(uuid string, friendUuid string) error
+	UpdateBlacklistStatus(friend *ImFriend) error
 }

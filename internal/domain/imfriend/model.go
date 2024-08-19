@@ -22,7 +22,7 @@ type ImFriend struct {
 	EverContacted bool   // 是否与这个朋友曾经有联系
 }
 
-func (f ImFriend) SessionId() string {
+func (f *ImFriend) SessionId() string {
 	var idstr string
 	rst := strings.Compare(f.FriendUuid, f.UserUuid)
 	//小的放在前面就行了
@@ -37,4 +37,12 @@ func (f ImFriend) SessionId() string {
 	hash := md5.Sum([]byte(idstr))
 	md5Str := hex.EncodeToString(hash[:])
 	return md5Str
+}
+
+func (f *ImFriend) BlacklistFriend() {
+	f.IsBlack = true
+}
+
+func (f *ImFriend) CancelBlacklistFriend() {
+	f.IsBlack = false
 }

@@ -70,6 +70,16 @@ type ManticoreImFriendRepo struct {
 	ManticoreDB *xorm.Engine
 }
 
+func (r ManticoreImFriendRepo) UpdateBlacklistStatus(friend *imfriend.ImFriend) error {
+	var blacklist = 0
+	if friend.IsBlack {
+		blacklist = 1
+	}
+	sql := fmt.Sprintf(`update im_friend_list set isblack = %d where match('@fromuser %s @touser %s');`, blacklist, friend.UserUuid, friend.FriendUuid)
+	_, err := r.ManticoreDB.Exec(sql)
+	return err
+}
+
 func (r ManticoreImFriendRepo) AddImFriend(friend imfriend.ImFriend) error {
 	sql := fmt.Sprintf(`insert into im_friend_list (fromuser,touser,isblack,count,status,created,nexttime) values ('%s','%s',%d,%d,%d,%d,%d)`, friend.UserUuid, friend.FriendUuid, 0, 2, 1, time.Now().UnixMilli(), 0)
 	_, err := r.ManticoreDB.Exec(sql)

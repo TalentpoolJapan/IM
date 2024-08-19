@@ -498,14 +498,13 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 			message, _ := json.Marshal(&errorMsg)
 			s.Send <- message
 
-			addSystemMessageCmd := &user.AddSystemMessageCmd{
+			addBlacklistMessage := &user.AddBlacklistMessageCmd{
 				Uuid:        s.UUID,
 				FriendUuid:  wsMsg.ToUser,
 				Msg:         wsMsg.Msg,
-				MsgCode:     "对方已把你拉黑（系统消息多语言key替代）",
 				SystemMsgId: wsMsg.MsgId,
 			}
-			config.UserAppServ.AddSystemMessage(addSystemMessageCmd)
+			config.UserAppServ.AddBlacklistMessage(addBlacklistMessage)
 			return
 		}
 	}
@@ -653,14 +652,13 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		message, _ := json.Marshal(&errorMsg)
 		c.SendUsersMsg(s.UUID, message)
 
-		addSystemMessageCmd := &user.AddSystemMessageCmd{
+		addSystemMessageCmd := &user.AddSendMessageLimitMessageCmd{
 			Uuid:        s.UUID,
 			FriendUuid:  wsMsg.ToUser,
 			Msg:         wsMsg.Msg,
-			MsgCode:     "聊天消息达到上限（系统消息多语言key替代）",
 			SystemMsgId: wsMsg.MsgId,
 		}
-		config.UserAppServ.AddSystemMessage(addSystemMessageCmd)
+		config.UserAppServ.AddSendMessageLimitMessage(addSystemMessageCmd)
 	}
 
 }

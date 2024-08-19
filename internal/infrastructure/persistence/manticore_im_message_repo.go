@@ -30,7 +30,6 @@ func convertImMessageEntity(po *imMessagePO) *immessage.ImMessage {
 		FromUser:  po.Fromuser,
 		Msg:       po.Msg,
 		MsgType:   po.Msgtype,
-		MsgCode:   po.MsgCode,
 		ToType:    po.Totype,
 		FromType:  po.Fromtype,
 		Created:   po.Created,
@@ -157,8 +156,8 @@ func (r ManticoreMessageRepo) LatestImMessageBySessionId(sessionIds []string) ([
 }
 
 func (r ManticoreMessageRepo) SaveImMessage(imMessage immessage.ImMessage) (int64, error) {
-	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid,msg_code) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s','%s')`,
-		imMessage.SessionId, imMessage.ToUser, imMessage.FromUser, imMessage.Msg, imMessage.MsgType, imMessage.ToType, imMessage.FromType, time.Now().UnixMicro(), imMessage.MsgId, imMessage.MsgCode)
+	sql := fmt.Sprintf(`insert into im_message (sessionid,touser,fromuser,msg,msgtype,totype,fromtype,created,msgid) values ('%s','%s','%s','%s',%d,%d,%d,%d,'%s')`,
+		imMessage.SessionId, imMessage.ToUser, imMessage.FromUser, imMessage.Msg, imMessage.MsgType, imMessage.ToType, imMessage.FromType, time.Now().UnixMicro(), imMessage.MsgId)
 	res, err := r.ManticoreDB.Exec(sql)
 	if err != nil {
 		return 0, err

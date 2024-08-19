@@ -3,8 +3,9 @@ package immessage
 type MessageType int
 
 const (
-	Text = 1 << iota
-	SystemMsg
+	Text             = 1 << iota
+	SendMessageLimit = 2
+	Blacklist        = 3
 )
 
 type ImMessage struct {
@@ -14,9 +15,8 @@ type ImMessage struct {
 	FromUser  string      `json:"fromuser,omitempty"`
 	Msg       string      `json:"msg,omitempty"`
 	MsgType   MessageType `json:"msgtype,omitempty"`
-	MsgCode   string
-	ToType    int    `json:"totype,omitempty"`
-	FromType  int    `json:"fromtype,omitempty"`
-	Created   int64  `json:"created,omitempty"`
-	MsgId     string `json:"msgid,omitempty"`
+	ToType    int         `json:"totype,omitempty"`
+	FromType  int         `json:"fromtype,omitempty"`
+	Created   int64       `json:"created,omitempty"`
+	MsgId     string      `json:"msgid,omitempty"`
 }

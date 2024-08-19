@@ -189,7 +189,7 @@ func (s AppService) ListImMessageRecent(qry *ListImMessageRecentQry) application
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
 		// 系统消息只有自己能看
-		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+		if message.MsgType == immessage.SendMessageLimit && message.FromUser != qry.Uuid {
 			continue
 		}
 		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
@@ -224,7 +224,7 @@ func (s AppService) ListImMessageBeforeClientMsgId(qry *ListImMessageBeforeClien
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
 		// 系统消息只有自己能看
-		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+		if message.MsgType == immessage.SendMessageLimit && message.FromUser != qry.Uuid {
 			continue
 		}
 		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
@@ -259,7 +259,7 @@ func (s AppService) ListImMessageAfterClientMsgId(qry *ListImMessageAfterClientM
 	var messageDTOs []*ImMessageDTO
 	for _, message := range imMessages {
 		// 系统消息只有自己能看
-		if message.MsgType == immessage.SystemMsg && message.FromUser != qry.Uuid {
+		if message.MsgType == immessage.SendMessageLimit && message.FromUser != qry.Uuid {
 			continue
 		}
 		messageDTOs = append(messageDTOs, buildImMessageDTO(message))
@@ -268,7 +268,7 @@ func (s AppService) ListImMessageAfterClientMsgId(qry *ListImMessageAfterClientM
 	return application.MultiRespOf[ImMessageDTO](messageDTOs, "get message success")
 }
 
-func (s AppService) AddSystemMessage(cmd *AddSystemMessageCmd) application.SingleResp[any] {
+func (s AppService) AddSendMessageLimitMessage(cmd *AddSendMessageLimitMessageCmd) application.SingleResp[any] {
 	imFriend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
 	if err != nil {
 		return application.SingleRespFail[any]("add system message failed: " + err.Error())
@@ -282,8 +282,7 @@ func (s AppService) AddSystemMessage(cmd *AddSystemMessageCmd) application.Singl
 		ToUser:    cmd.FriendUuid,
 		FromUser:  cmd.Uuid,
 		Msg:       cmd.Msg,
-		MsgCode:   cmd.MsgCode,
-		MsgType:   immessage.SystemMsg,
+		MsgType:   immessage.SendMessageLimit,
 		ToType:    0,
 		FromType:  0,
 		Created:   time.Now().UnixMicro(),
@@ -294,7 +293,71 @@ func (s AppService) AddSystemMessage(cmd *AddSystemMessageCmd) application.Singl
 		return application.SingleRespFail[any]("add system message failed: " + err.Error())
 	}
 	return application.SingleRespOk[any]()
+}
 
+func (s AppService) AddBlacklistMessage(cmd *AddBlacklistMessageCmd) application.SingleResp[any] {
+	imFriend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("add system message failed: " + err.Error())
+	}
+	if imFriend == nil {
+		return application.SingleRespFail[any]("add system message failed: friend not exist")
+	}
+
+	imMessage := &immessage.ImMessage{
+		SessionId: imFriend.SessionId(),
+		ToUser:    cmd.FriendUuid,
+		FromUser:  cmd.Uuid,
+		Msg:       cmd.Msg,
+		MsgType:   immessage.Blacklist,
+		ToType:    0,
+		FromType:  0,
+		Created:   time.Now().UnixMicro(),
+		MsgId:     cmd.SystemMsgId,
+	}
+	_, err = s.imMessageRepo.SaveImMessage(*imMessage)
+	if err != nil {
+		return application.SingleRespFail[any]("add system message failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
+}
+
+func (s AppService) BlacklistFriend(cmd *BlacklistFriendCmd) application.SingleResp[any] {
+	friend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("blacklist friend failed: " + err.Error())
+	}
+	if friend == nil {
+		return application.SingleRespFail[any]("blacklist friend failed: friend not exist")
+	}
+	if friend.IsBlack {
+		return application.SingleRespOk[any]()
+	}
+	friend.BlacklistFriend()
+	err = s.imFriendRepo.UpdateBlacklistStatus(friend)
+	if err != nil {
+		return application.SingleRespFail[any]("blacklist friend failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
+}
+
+func (s AppService) CancelBlacklistFriend(cmd *CancelBlacklistFriendCmd) application.SingleResp[any] {
+	friend, err := s.imFriendRepo.GetFriendByUuid(cmd.Uuid, cmd.FriendUuid)
+	if err != nil {
+		return application.SingleRespFail[any]("cancel blacklist friend failed: " + err.Error())
+	}
+	if friend == nil {
+		return application.SingleRespFail[any]("cancel blacklist friend failed: friend not exist")
+	}
+	if !friend.IsBlack {
+		return application.SingleRespOk[any]()
+	}
+	friend.CancelBlacklistFriend()
+	err = s.imFriendRepo.UpdateBlacklistStatus(friend)
+	if err != nil {
+		return application.SingleRespFail[any]("cancel blacklist friend failed: " + err.Error())
+	}
+	return application.SingleRespOk[any]()
 }
 
 func buildImMessageDTO(message *immessage.ImMessage) *ImMessageDTO {
@@ -304,7 +367,6 @@ func buildImMessageDTO(message *immessage.ImMessage) *ImMessageDTO {
 		Touser:    message.ToUser,
 		Fromuser:  message.FromUser,
 		Msg:       message.Msg,
-		MsgCode:   message.MsgCode,
 		Msgtype:   int(message.MsgType),
 		Totype:    message.ToType,
 		Fromtype:  message.FromType,
