@@ -34,7 +34,8 @@ type RecvP2PMsg struct {
 	//发送给/对 谁进行处理
 	ToUser string `json:"touser"`
 	//
-	Msg string `json:"msg"`
+	Msg     string `json:"msg"`
+	Msgtype int    `json:"msgtype"`
 }
 
 type ErrorMsg struct {

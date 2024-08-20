@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"imserver/config"
 	"imserver/internal/application/user"
+	"imserver/internal/domain/immessage"
 	"imserver/models"
 	"imserver/util"
 	"log"
@@ -489,15 +490,6 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		//检查我是不是在它的黑名单里面
 		isBlack := c.M.MemDB.Get(wsMsg.ToUser).(*gmap.AnyAnyMap).Get("Blacklist").(*gmap.AnyAnyMap).Get(s.UUID)
 		if isBlack != nil {
-			errorMsg = ErrorMsg{
-				Action: "ErrorMsg",
-				Code:   10009,
-				MsgId:  wsMsg.MsgId,
-				Msg:    "IN_BLACK_LIST",
-			}
-			message, _ := json.Marshal(&errorMsg)
-			s.Send <- message
-
 			addBlacklistMessage := &user.AddBlacklistMessageCmd{
 				Uuid:        s.UUID,
 				FriendUuid:  wsMsg.ToUser,
@@ -505,6 +497,18 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 				SystemMsgId: wsMsg.MsgId,
 			}
 			config.UserAppServ.AddBlacklistMessage(addBlacklistMessage)
+			blacklist := &RecvP2PMsg{
+				Action:       "InBlacklist",
+				MsgId:        wsMsg.MsgId,
+				FromUser:     s.UUID,
+				FromUserType: s.Usertype,
+				ToUser:       wsMsg.ToUser,
+				Msg:          wsMsg.Msg,
+				Msgtype:      immessage.Blacklist,
+			}
+			message, _ := json.Marshal(&blacklist)
+			s.Send <- message
+			c.SendUsersMsg(s.UUID, message)
 			return
 		}
 	}
@@ -515,7 +519,7 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		FromUserType: s.Usertype,
 		ToUser:       wsMsg.ToUser,
 		Msg:          wsMsg.Msg,
-		//ReadId:       uint64(readId),
+		Msgtype:      immessage.Text,
 	}
 
 	//检查我还能不能发消息给他
@@ -643,14 +647,14 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 		//再发一遍给接收人的所有连接
 		c.SendUsersMsg(wsMsg.ToUser, message)
 	} else {
-		errorMsg = ErrorMsg{
-			Action: "ErrorMsg",
-			Code:   10030,
-			MsgId:  wsMsg.MsgId,
-			Msg:    "EXCEED_TOUSER_RECV_COUNT_LIMIT",
-		}
-		message, _ := json.Marshal(&errorMsg)
-		c.SendUsersMsg(s.UUID, message)
+		//errorMsg = ErrorMsg{
+		//	Action: "ErrorMsg",
+		//	Code:   10030,
+		//	MsgId:  wsMsg.MsgId,
+		//	Msg:    "EXCEED_TOUSER_RECV_COUNT_LIMIT",
+		//}
+		//message, _ := json.Marshal(&errorMsg)
+		//c.SendUsersMsg(s.UUID, message)
 
 		addSystemMessageCmd := &user.AddSendMessageLimitMessageCmd{
 			Uuid:        s.UUID,
@@ -659,6 +663,19 @@ func (c *Controller) SendP2PMsg(s *models.InitUser, wsMsg WsMsg) {
 			SystemMsgId: wsMsg.MsgId,
 		}
 		config.UserAppServ.AddSendMessageLimitMessage(addSystemMessageCmd)
+
+		sendMessageLimit := &RecvP2PMsg{
+			Action:       "SendMessageLimit",
+			MsgId:        wsMsg.MsgId,
+			FromUser:     s.UUID,
+			FromUserType: s.Usertype,
+			ToUser:       wsMsg.ToUser,
+			Msg:          wsMsg.Msg,
+			Msgtype:      immessage.SendMessageLimit,
+		}
+		message, _ := json.Marshal(&sendMessageLimit)
+		c.SendUsersMsg(s.UUID, message)
+
 	}
 
 }
